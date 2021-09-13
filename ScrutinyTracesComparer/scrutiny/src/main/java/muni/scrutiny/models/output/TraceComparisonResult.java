@@ -14,12 +14,12 @@ public class TraceComparisonResult {
         this.operationPresent = false;
     }
 
-    @SerializedName("operationcode")
+    @SerializedName("operation_code")
     public String operationCode;
 
-    @SerializedName("comparisonresult")
+    @SerializedName("comparison_result")
     public double comparisonResult;
 
-    @SerializedName("operationpresent")
+    @SerializedName("operation_present")
     public boolean operationPresent;
 }

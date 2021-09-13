@@ -9,6 +9,6 @@ public class TracesComparisonResult {
     @SerializedName("metric")
     public String metric;
 
-    @SerializedName("tracesresults")
+    @SerializedName("traces_results")
     public List<TraceComparisonResult> tracesResults = new ArrayList<TraceComparisonResult>();
 }
