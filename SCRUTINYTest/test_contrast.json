@@ -1,0 +1,65 @@
+{
+    "py/object": "scrutiny.interfaces.Contrast",
+    "ref_name": "Test reference",
+    "prof_name": "Test new",
+    "result": "ContrastState.SUSPICIOUS",
+    "contrasts": [
+        {
+            "py/object": "scrutiny.javacard.modules.tracescomparer.TracesComparerContrast",
+            "module_name": "Traces Comparer",
+            "result": "ContrastState.SUSPICIOUS",
+            "matching": {
+                "RandomData.ALG_SECURE_RANDOM": {
+                    "py/object": "scrutiny.javacard.modules.tracescomparer.TraceComparisonResult",
+                    "is_supported": true,
+                    "is_visible": true,
+                    "metric": "Euclidean",
+                    "metric_result": 100,
+                    "in_matching_interval": true,
+                    "in_warn_interval": true,
+                    "traces_image_path":"test.png"
+                },
+                "KeyBuilder.LENGTH_AES_256": {
+                    "py/object": "scrutiny.javacard.modules.tracescomparer.TraceComparisonResult",
+                    "is_supported": true,
+                    "is_visible": true,
+                    "metric": "Euclidean",
+                    "metric_result": 100,
+                    "in_matching_interval": true,
+                    "in_warn_interval": true,
+                    "traces_image_path":"test.png"
+                },
+                "KeyBuilder.LENGTH_DES3_3KEY": {
+                    "py/object": "scrutiny.javacard.modules.tracescomparer.TraceComparisonResult",
+                    "is_supported": true,
+                    "is_visible": true,
+                    "metric": "Euclidean",
+                    "metric_result": 100,
+                    "in_matching_interval": false,
+                    "in_warn_interval": true,
+                    "traces_image_path":"test.png"
+                },
+                "Cipher.ALG_AES_BLOCK_128_CBC_NOPAD": {
+                    "py/object": "scrutiny.javacard.modules.tracescomparer.TraceComparisonResult",
+                    "is_supported": true,
+                    "is_visible": true,
+                    "metric": "Euclidean",
+                    "metric_result": 100,
+                    "in_matching_interval": false,
+                    "in_warn_interval": false,
+                    "traces_image_path":"test.png"
+                },
+                "Cipher.ALG_DES_CBC_NOPAD": {
+                    "py/object": "scrutiny.javacard.modules.tracescomparer.TraceComparisonResult",
+                    "is_supported": true,
+                    "is_visible": false,
+                    "metric": "Euclidean",
+                    "metric_result": 100,
+                    "in_matching_interval": false,
+                    "in_warn_interval": false,
+                    "traces_image_path":"test.png"
+                }
+            }
+        }
+    ]
+}
