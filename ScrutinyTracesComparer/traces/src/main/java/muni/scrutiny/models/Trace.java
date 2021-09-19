@@ -16,10 +16,12 @@ public class Trace {
     private final double[] timeArray;
 
     private final int dataCount;
+
     /**
      * Unit of voltage, should be V or mV.
      */
     private final String voltageUnit;
+
     /**
      * Unit of time, should be ms or s.
      */
