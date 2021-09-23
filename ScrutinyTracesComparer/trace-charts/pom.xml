@@ -17,6 +17,13 @@
             <artifactId>jfreechart</artifactId>
             <version>1.0.13</version>
         </dependency>
+
+        <dependency>
+            <groupId>muni.scrutiny</groupId>
+            <artifactId>traces</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <properties>
