@@ -27,7 +27,7 @@ public class DataSaver {
         String[] csvRow = new String[2];
         
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(dataPath.toFile()))) {
-            try (CSVWriter csvWriter = new CSVWriter(bw, ',', CSVWriter.NO_QUOTE_CHARACTER)) {
+            try (CSVWriter csvWriter = new CSVWriter(bw)) {
                 csvRow[0] = "Time";
                 csvRow[1] = "Voltage";
                 csvWriter.writeNext(csvRow);
