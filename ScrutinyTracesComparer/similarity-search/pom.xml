@@ -9,6 +9,14 @@
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.github.haifengl</groupId>
+            <artifactId>smile-math</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+    </dependencies>
+
     <groupId>muni.scrutiny</groupId>
     <artifactId>similarity-search</artifactId>
     <version>1.0.0</version>
