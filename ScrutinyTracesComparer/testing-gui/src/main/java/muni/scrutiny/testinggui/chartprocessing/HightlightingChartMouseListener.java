@@ -103,9 +103,11 @@ public class HightlightingChartMouseListener implements ChartMouseListener {
 
     public void handleChartMouseClicked(XYItemEntity entity) {
         int clickedIndexOnModifiedTrace = entity.getItem();
+        double[] time = extractionTabModel.getCurrentTrace().getTime(false);
+
         if (extractionTabModel.getFirstIndexOnChartTrace() == null || extractionTabModel.getFirstIndexOnChartTrace() == 0) {
             extractionTabModel.setFirstIndexOnChartTrace(clickedIndexOnModifiedTrace);
-            firstTimeJSpinner.setValue(extractionTabModel.getCurrentTrace().getTimeOnPosition(extractionTabModel.getFirstIndexOnChartTrace()));
+            firstTimeJSpinner.setValue(time[extractionTabModel.getFirstIndexOnChartTrace()]);
         } else {
             if (clickedIndexOnModifiedTrace < extractionTabModel.getFirstIndexOnChartTrace()) {
                 extractionTabModel.setLastIndexOnChartTrace(extractionTabModel.getFirstIndexOnChartTrace());
@@ -114,8 +116,8 @@ public class HightlightingChartMouseListener implements ChartMouseListener {
                 extractionTabModel.setLastIndexOnChartTrace(clickedIndexOnModifiedTrace);
             }
 
-            firstTimeJSpinner.setValue(extractionTabModel.getCurrentTrace().getTimeOnPosition(extractionTabModel.getFirstIndexOnChartTrace()));
-            lastTimeJSpinner.setValue(extractionTabModel.getCurrentTrace().getTimeOnPosition(extractionTabModel.getLastIndexOnChartTrace()));
+            firstTimeJSpinner.setValue(time[extractionTabModel.getFirstIndexOnChartTrace()]);
+            lastTimeJSpinner.setValue(time[extractionTabModel.getLastIndexOnChartTrace()]);
         }
     }
 }

@@ -15,6 +15,12 @@
             <artifactId>smile-math</artifactId>
             <version>2.6.0</version>
         </dependency>
+        <dependency>
+            <groupId>muni.scrutiny</groupId>
+            <artifactId>traces</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <groupId>muni.scrutiny</groupId>

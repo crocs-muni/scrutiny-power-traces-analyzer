@@ -5,6 +5,8 @@ import muni.scrutiny.testinggui.chartprocessing.HightlightingChartMouseListener;
 import muni.scrutiny.testinggui.chartprocessing.UITracePlotter;
 import muni.scrutiny.testinggui.models.ExtractionTabModel;
 import muni.scrutiny.testinggui.models.MainFormModel;
+import muni.scrutiny.testinggui.models.resources.ComboItemModel;
+import muni.scrutiny.testinggui.testingpipelines.TraceResamplingPipeline;
 import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.traces.loader.DataLoader;
 import muni.scrutiny.traces.models.Trace;
@@ -12,8 +14,6 @@ import muni.scrutiny.traces.saver.DataSaver;
 import org.jfree.chart.ChartPanel;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -27,6 +27,8 @@ public class MainForm {
     private JPanel mainPanel;
 
     private JTabbedPane mainPane;
+
+    // Extraction part
     private JTextField fromTraceTextField;
     private JButton loadButton;
     private JSpinner fromSpinner;
@@ -36,9 +38,33 @@ public class MainForm {
     private JButton saveButton;
     private JPanel chartPanel;
 
+    // Visualization part
+    private JTextField preprocessTraceTextField;
+    private JComboBox pipelinesComboBox;
+    private JButton executeButton;
+    private JPanel beforeChartPanel;
+    private JPanel afterChartPanel;
+
     private final MainFormModel mainFormModel = new MainFormModel();
 
     public MainForm() {
+        initExtractionTab();
+        initVisualizationTab();
+    }
+
+    public static void main(String[] argv) {
+        EventQueue.invokeLater(() -> {
+            MainForm mainForm = new MainForm();
+            JFrame mainFrame = new JFrame("Testing app");
+            mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            mainFrame.setContentPane(mainForm.mainPanel);
+            mainFrame.setPreferredSize(new Dimension(1260,850));
+            mainFrame.pack();
+            mainFrame.setVisible(true);
+        });
+    }
+
+    private void initExtractionTab() {
         loadButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -62,33 +88,28 @@ public class MainForm {
                 saveTrace();
             }
         });
-        fromSpinner.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                double value = Double.valueOf(fromSpinner.getValue().toString());
-                int index = mainFormModel.getExtractionTabModel().getCurrentTrace().getIndexOfTimeValue(value);
-                mainFormModel.getExtractionTabModel().setFirstIndexOnChartTrace(index);
-            }
+
+        fromSpinner.addChangeListener(e -> {
+            double value = Double.parseDouble(fromSpinner.getValue().toString());
+            int index = mainFormModel.getExtractionTabModel().getCurrentTrace().getIndexOfTimeValue(value);
+            mainFormModel.getExtractionTabModel().setFirstIndexOnChartTrace(index);
         });
-        toSpinner.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                double value = Double.valueOf(fromSpinner.getValue().toString());
-                int index = mainFormModel.getExtractionTabModel().getCurrentTrace().getIndexOfTimeValue(value);
-                mainFormModel.getExtractionTabModel().setLastIndexOnChartTrace(index);
-            }
+        toSpinner.addChangeListener(e -> {
+            double value = Double.parseDouble(fromSpinner.getValue().toString());
+            int index = mainFormModel.getExtractionTabModel().getCurrentTrace().getIndexOfTimeValue(value);
+            mainFormModel.getExtractionTabModel().setLastIndexOnChartTrace(index);
         });
     }
 
-    public static void main(String[] argv) {
-        EventQueue.invokeLater(() -> {
-            MainForm mainForm = new MainForm();
-            JFrame mainFrame = new JFrame("Testing app");
-            mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            mainFrame.setContentPane(mainForm.mainPanel);
-            mainFrame.setPreferredSize(new Dimension(1260,850));
-            mainFrame.pack();
-            mainFrame.setVisible(true);
+    private void initVisualizationTab() {
+        pipelinesComboBox.addItem(new ComboItemModel("-", ""));
+        pipelinesComboBox.addItem(new ComboItemModel("Resampling Pipeline", "TraceResamplingPipeline"));
+        executeButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                executeProcessing();
+            }
         });
     }
 
@@ -96,7 +117,7 @@ public class MainForm {
         try {
             Path path = Paths.get(fromTraceTextField.getText());
             chartPanel.removeAll();
-            Trace trace = DataLoader.importFromCsv(path, DataManager.DEFAULT_TIME_COLUMN, DataManager.DEFAULT_VOLTAGE_COLUMN, true);
+            Trace trace = DataLoader.importFromCsv(path, DataManager.DEFAULT_TIME_COLUMN, DataManager.DEFAULT_VOLTAGE_COLUMN, false);
             mainFormModel.getExtractionTabModel().setCurrentTrace(trace);
             UITracePlotter uiTracePlotter = new UITracePlotter(trace);
             Dimension panelSize = new Dimension(chartPanel.getWidth(), chartPanel.getHeight());
@@ -126,9 +147,10 @@ public class MainForm {
             return;
         }
 
+        double[] time = extTabModel.getCurrentTrace().getTime(false);
         Boundary boundary = new Boundary(
-                extTabModel.getCurrentTrace().getTimeOnPosition(extTabModel.getFirstIndexOnChartTrace()),
-                extTabModel.getCurrentTrace().getTimeOnPosition(extTabModel.getLastIndexOnChartTrace()),
+                time[extTabModel.getFirstIndexOnChartTrace()],
+                time[extTabModel.getLastIndexOnChartTrace()],
                 extTabModel.getFirstIndexOnChartTrace(),
                 extTabModel.getLastIndexOnChartTrace());
         List<Boundary> boundariesList = new ArrayList<>();
@@ -143,6 +165,36 @@ public class MainForm {
             DataSaver.exportToCsv(extTabModel.getCurrentTrace(), Paths.get(saveToTextField.getText()), extTabModel.getFirstIndexOnChartTrace(), extTabModel.getLastIndexOnChartTrace());
         } catch (IOException exception) {
             JOptionPane.showMessageDialog(mainPanel, "Could not save trace");
+        }
+    }
+
+    private void executeProcessing() {
+        ComboItemModel comboItemModel = (ComboItemModel)pipelinesComboBox.getSelectedItem();
+        if (comboItemModel == null || comboItemModel.getValue() == null || comboItemModel.getValue().equals("")) {
+            JOptionPane.showMessageDialog(mainPanel, "No operation was selected");
+        } else if (TraceResamplingPipeline.class.getName().contains(comboItemModel.getValue())) {
+            try {
+                // Load and show trace
+                Path path = Paths.get(preprocessTraceTextField.getText());
+                Trace trace = DataLoader.importFromCsv(path, DataManager.DEFAULT_TIME_COLUMN, DataManager.DEFAULT_VOLTAGE_COLUMN, false);
+                beforeChartPanel.removeAll();
+                afterChartPanel.removeAll();
+                UITracePlotter uiTracePlotter1 = new UITracePlotter(trace);
+                Dimension panelSize = new Dimension(beforeChartPanel.getWidth(), beforeChartPanel.getHeight());
+                ChartPanel jfreeChartPanel1 = uiTracePlotter1.createChartPanel("Traces chart - " + trace.getSamplingFrequency(), "Time", "Voltage", panelSize);
+                beforeChartPanel.add(jfreeChartPanel1, BorderLayout.CENTER);
+                beforeChartPanel.validate();
+
+                // Preprocess and show trace
+                TraceResamplingPipeline trp = new TraceResamplingPipeline((int) (trace.getSamplingFrequency() * 5), 1);
+                Trace tp = trp.preprocess(trace);
+                UITracePlotter uiTracePlotter2 = new UITracePlotter(tp);
+                ChartPanel jfreeChartPanel2 = uiTracePlotter2.createChartPanel("Traces chart - " + tp.getSamplingFrequency(), "Time", "Voltage", panelSize);
+                afterChartPanel.add(jfreeChartPanel2, BorderLayout.CENTER);
+                afterChartPanel.validate();
+            } catch (IOException exception) {
+                JOptionPane.showMessageDialog(mainPanel, "Could not load trace");
+            }
         }
     }
 }

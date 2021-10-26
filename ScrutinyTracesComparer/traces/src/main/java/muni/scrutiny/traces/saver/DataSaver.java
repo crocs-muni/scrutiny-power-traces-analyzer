@@ -25,7 +25,9 @@ public class DataSaver {
 
     private static void privateExportToCsv(Trace trace, Path dataPath, int firstIndex, int lastIndex) throws IOException {
         String[] csvRow = new String[2];
-        
+        double[] voltage = trace.getVoltage();
+        double[] time = trace.getTime(false);
+
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(dataPath.toFile()))) {
             try (CSVWriter csvWriter = new CSVWriter(bw)) {
                 csvRow[0] = "Time";
@@ -36,8 +38,8 @@ public class DataSaver {
                 csvWriter.writeNext(csvRow);
                 csvWriter.writeNext(new String[2]);
                 for (int i = firstIndex; i < lastIndex; i++) {
-                    csvRow[0] = String.valueOf(trace.getTimeOnPosition(i));
-                    csvRow[1] = String.valueOf(trace.getVoltageOnPosition(i));
+                    csvRow[0] = String.valueOf(time[i]);
+                    csvRow[1] = String.valueOf(voltage[i]);
                     csvWriter.writeNext(csvRow);
                 }
             }

@@ -29,8 +29,8 @@ public class DataManager {
         }
     }
 
-    public static Trace loadTrace(Path filePath, boolean notSkipping) throws IOException {
-        return DataLoader.importFromCsv(filePath, DEFAULT_TIME_COLUMN, DEFAULT_VOLTAGE_COLUMN, notSkipping);
+    public static Trace loadTrace(Path filePath, boolean loadTime) throws IOException {
+        return DataLoader.importFromCsv(filePath, DEFAULT_TIME_COLUMN, DEFAULT_VOLTAGE_COLUMN, loadTime);
     }
 
     public static void saveTrace(Path filePath, Trace trace) throws IOException {

@@ -15,7 +15,7 @@ public class Trace {
 
     private final double[] voltageArray;
 
-    private final double[] timeArray;
+    private double[] timeArray;
 
     private final int dataCount;
 
@@ -27,19 +27,56 @@ public class Trace {
     
     private double voltageMinimum;
 
+    private int samplingFrequency;
+
     public Trace(
             String name,
             int dataCount,
             String voltageUnit,
-            String timeUnit) {
+            String timeUnit,
+            int samplingFrequency,
+            boolean initTimeArray) {
         this.name = name;
         this.voltageUnit = voltageUnit;
         this.timeUnit = timeUnit;
         this.dataCount = dataCount;
         this.voltageArray = new double[dataCount];
-        this.timeArray = new double[dataCount];
+        this.samplingFrequency = samplingFrequency;
+        if (initTimeArray) {
+            this.timeArray = new double[dataCount];
+        } else {
+            this.timeArray = null;
+        }
+
         this.voltageMaximum = Double.NEGATIVE_INFINITY;
         this.voltageMinimum = Double.POSITIVE_INFINITY;
+    }
+
+    public Trace(
+            String name,
+            int dataCount,
+            String voltageUnit,
+            String timeUnit,
+            double[] voltageArray,
+            int samplingFrequency) {
+        this.name = name;
+        this.voltageUnit = voltageUnit;
+        this.timeUnit = timeUnit;
+        this.dataCount = dataCount;
+        this.voltageArray = voltageArray;
+        this.samplingFrequency = samplingFrequency;
+        this.timeArray = null;
+        this.voltageMaximum = Double.MIN_VALUE;
+        this.voltageMinimum = Double.MAX_VALUE;
+        for (double v : voltageArray) {
+            if (this.voltageMaximum < v) {
+                this.voltageMaximum = v;
+            }
+
+            if (this.voltageMinimum > v) {
+                this.voltageMinimum = v;
+            }
+        }
     }
     
     public Trace(
@@ -61,9 +98,23 @@ public class Trace {
         this.voltageMinimum = voltageMinimum;
     }
 
+    public Trace(Trace t) {
+        this.name = t.getName();
+        this.voltageUnit = t.getVoltageUnit();
+        this.timeUnit = t.getTimeUnit();
+        this.dataCount = t.getDataCount();
+        this.voltageArray = t.getVoltage().clone();
+        this.timeArray = t.getTime(false).clone();
+        this.voltageMaximum = t.getMaximalVoltage();
+        this.voltageMinimum = t.getMinimalVoltage();
+        this.samplingFrequency = t.getSamplingFrequency();
+    }
+
     public void addData(double voltageValue, double timeValue, int position) {
         voltageArray[position] = voltageValue;
-        timeArray[position] = timeValue;
+        if (timeArray != null) {
+            timeArray[position] = timeValue;
+        }
         if (voltageArray[position] < voltageMinimum) voltageMinimum = voltageArray[position];
         if (voltageArray[position] > voltageMaximum) voltageMaximum = voltageArray[position];
     }
@@ -72,28 +123,24 @@ public class Trace {
         return voltageArray;
     }
 
-    public double getVoltageOnPosition(int position) {
-        return voltageArray[position];
-    }
-
-    public void setVoltageOnPosition(double value, int position) {
-        voltageArray[position] = value;
-        if (voltageArray[position] < voltageMinimum) voltageMinimum = voltageArray[position];
-        if (voltageArray[position] > voltageMaximum) voltageMaximum = voltageArray[position];
-    }
-
     public String getName() { return name; }
 
-    public double[] getTime() {
+    public double[] getTime(boolean recalculate)
+    {
+        if (timeArray == null || recalculate) {
+            double samplingFreqTimeUnit = getSamplingFrequencyTimeUnit();
+            double nextTime = 0d;
+            double[] time = new double[getDataCount()];
+            for (int i = 0; i < getDataCount(); i++) {
+                time[i] = nextTime;
+                nextTime += samplingFreqTimeUnit;
+            }
+
+            this.timeArray = time;
+            return time;
+        }
+
         return timeArray;
-    }
-
-    public double getTimeOnPosition(int position) {
-        return timeArray[position];
-    }
-
-    public void setTimeOnPosition(int position, double value) {
-        timeArray[position] = value;
     }
 
     public String getVoltageUnit() {
@@ -123,6 +170,10 @@ public class Trace {
     }
 
     public int getSamplingFrequency() {
+        if (samplingFrequency > 0) {
+            return samplingFrequency;
+        }
+
         BigDecimal dT = BigDecimal.valueOf(timeArray[0])
                 .abs()
                 .setScale(10, RoundingMode.HALF_UP)
@@ -133,7 +184,26 @@ public class Trace {
                 .abs()
                 .divide(UnitsHelper.getInvertedTimeUnitConstant(timeUnit), 10, RoundingMode.HALF_UP);
         dT = BigDecimal.ONE.divide(dT, 10, RoundingMode.HALF_UP);
-        return dT.intValue();
+
+        samplingFrequency = dT.intValue();
+        return samplingFrequency;
+    }
+
+    public double getSamplingFrequencyTimeUnit() {
+        if (samplingFrequency > 0) {
+            return BigDecimal.ONE.divide(BigDecimal.valueOf(samplingFrequency), 10, RoundingMode.HALF_UP).doubleValue();
+        }
+
+        BigDecimal dT = BigDecimal.valueOf(timeArray[0])
+                .abs()
+                .setScale(10, RoundingMode.HALF_UP)
+                .subtract(BigDecimal
+                        .valueOf(timeArray[1])
+                        .abs()
+                        .setScale(10, RoundingMode.HALF_UP))
+                .abs()
+                .divide(UnitsHelper.getInvertedTimeUnitConstant(timeUnit), 10, RoundingMode.HALF_UP);
+        return dT.doubleValue();
     }
     
     public double getMaximalVoltage() {
@@ -142,5 +212,20 @@ public class Trace {
     
     public double getMinimalVoltage() {
         return voltageMinimum;
+    }
+
+    public static int getSamplingFrequency(double t0, double t1, String timeUnit) {
+        BigDecimal dT = BigDecimal.valueOf(t0)
+                .abs()
+                .setScale(10, RoundingMode.HALF_UP)
+                .subtract(BigDecimal
+                        .valueOf(t1)
+                        .abs()
+                        .setScale(10, RoundingMode.HALF_UP))
+                .abs()
+                .divide(UnitsHelper.getInvertedTimeUnitConstant(timeUnit), 10, RoundingMode.HALF_UP);
+        dT = BigDecimal.ONE.divide(dT, 10, RoundingMode.HALF_UP);
+
+        return dT.intValue();
     }
 }

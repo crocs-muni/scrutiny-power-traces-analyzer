@@ -4,19 +4,17 @@ import com.google.gson.Gson;
 import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.similaritysearch.measures.DistanceMeasure;
 import muni.scrutiny.similaritysearch.measures.EuclideanDistance;
-import muni.scrutiny.traces.models.Trace;
-import muni.scrutiny.configurations.input.compared.ComparedCardConfig;
+import muni.scrutiny.configurations.input.compared.NewCardConfig;
 import muni.scrutiny.configurations.input.compared.ComparedCardConfigTrace;
 import muni.scrutiny.configurations.input.reference.ReferenceCardConfig;
 import muni.scrutiny.configurations.input.reference.ReferenceCardConfigTrace;
 import muni.scrutiny.configurations.output.TraceComparisonResult;
 import muni.scrutiny.configurations.output.TracesComparisonResult;
+import muni.scrutiny.traces.models.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
 
@@ -29,13 +27,13 @@ public class Main {
         String rcDirectory = "C:\\Users\\marti\\Desktop\\School\\SDIPR\\NXP JCOP 31 v2.4.1\\Extracted operations\\NXP Reference";
         String referenceJson = readFile(referenceConfigPath, StandardCharsets.UTF_8);
 
-        ComparedCardConfig comparedCardConfig = new Gson().fromJson(unknownJson, ComparedCardConfig.class);
+        NewCardConfig newCardConfig = new Gson().fromJson(unknownJson, NewCardConfig.class);
         ReferenceCardConfig referenceCardConfig = new Gson().fromJson(referenceJson, ReferenceCardConfig.class);
 
         TracesComparisonResult tcr = new TracesComparisonResult();
         tcr.metric = "Test";
         for (ReferenceCardConfigTrace rct : referenceCardConfig.traces) {
-            Optional<ComparedCardConfigTrace> ct = comparedCardConfig.traces.stream()
+            Optional<ComparedCardConfigTrace> ct = newCardConfig.traces.stream()
                     .filter((tr) -> tr.code.equals(rct.code))
                     .findFirst();
             if (!ct.isPresent()) {
@@ -45,8 +43,8 @@ public class Main {
 
             String uknownTracePath = ucDirectory + "\\" + ct.get().filepath;
             String referenceTracePath = rcDirectory + "\\" + rct.filepath;
-            Trace unknownTrace = DataManager.loadTrace(Paths.get(uknownTracePath), true);
-            Trace referenceTrace = DataManager.loadTrace(Paths.get(referenceTracePath), true);
+            Trace unknownTrace = DataManager.loadTrace(Paths.get(uknownTracePath), false);
+            Trace referenceTrace = DataManager.loadTrace(Paths.get(referenceTracePath), false);
             DistanceMeasure dm = new EuclideanDistance();
             double[] utv = unknownTrace.getVoltage();
             double[] rtv = referenceTrace.getVoltage();
@@ -60,10 +58,5 @@ public class Main {
         try (PrintWriter out = new PrintWriter(outputFilePath)) {
             out.println(tcrJson);
         }
-    }
-
-    private static String readFile(String path, Charset encoding) throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
     }
 }

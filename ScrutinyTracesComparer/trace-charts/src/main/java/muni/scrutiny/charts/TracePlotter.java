@@ -93,8 +93,10 @@ public class TracePlotter {
         Trace t = trace.getTrace();
         XYSeries xySeries = new XYSeries(t.getName(), false, true);
         xySeries.setMaximumItemCount(t.getDataCount());
+        double[] voltage = t.getVoltage();
+        double[] time = t.getTime(false);
         for (int i = 0; i < t.getDataCount(); i++) {
-            xySeries.add(t.getTimeOnPosition(i), t.getVoltageOnPosition(i));
+            xySeries.add(time[i], voltage[i]);
         }
 
         return xySeries;
