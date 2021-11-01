@@ -9,5 +9,5 @@ public interface IAction {
     Map<String, ActionParameter> getActionParameters();
     Map<String, ActionFlag> getActionFlags();
     void checkArguments();
-    void executeAction(String[] arguments) throws IOException;
+    void executeAction(String[] arguments) throws ActionException;
 }

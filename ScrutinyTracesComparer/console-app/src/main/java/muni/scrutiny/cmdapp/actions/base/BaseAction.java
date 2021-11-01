@@ -1,5 +1,6 @@
 package muni.scrutiny.cmdapp.actions.base;
 
+import java.io.IOException;
 import java.util.*;
 
 public abstract class BaseAction implements IAction {
@@ -9,6 +10,11 @@ public abstract class BaseAction implements IAction {
         parseParameters(parametersCopy, indexesToDelete);
         parseFlags(parametersCopy, indexesToDelete);
         checkArguments();
+    }
+
+    @Override
+    public void executeAction(String[] arguments) throws ActionException {
+        parseArguments(arguments);
     }
 
     private void parseFlags(List<String> parametersCopy, List<Integer> indexesToDelete) {
