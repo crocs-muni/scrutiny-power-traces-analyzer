@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>muni.scrutiny</groupId>
-    <artifactId>traces-comparator</artifactId>
+    <artifactId>traces-comparer</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0</version>
-    <name>Traces comparator project</name>
+    <name>Traces comparer project</name>
 
     <modules>
         <module>traces</module>
