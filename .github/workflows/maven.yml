@@ -5,8 +5,8 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
+    tags:
+    - '*'
     branches: [ main ]
 
 jobs:
@@ -24,3 +24,8 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package --file ScrutinyTracesComparer/pom.xml
+    - name: Publish release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "ScrutinyTracesComparer/testing-gui/target/testing-gui-jar-with-dependencies.jar"
+        token: ${{ secrets.GITHUB_TOKEN }}
