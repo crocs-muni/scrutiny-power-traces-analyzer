@@ -1,6 +1,7 @@
 package muni.scrutiny.testinggui;
 
 import muni.scrutiny.charts.models.Boundary;
+import muni.scrutiny.similaritysearch.pipelines.base.PreprocessingResult;
 import muni.scrutiny.testinggui.chartprocessing.HightlightingChartMouseListener;
 import muni.scrutiny.testinggui.chartprocessing.UITracePlotter;
 import muni.scrutiny.testinggui.models.ExtractionTabModel;
@@ -191,9 +192,9 @@ public class MainForm {
 
                 // Preprocess and show trace
                 TraceResamplingPipeline trp = new TraceResamplingPipeline((int) (trace.getSamplingFrequency() * 5), 1);
-                Trace tp = trp.preprocess(trace);
-                UITracePlotter uiTracePlotter2 = new UITracePlotter(tp);
-                ChartPanel jfreeChartPanel2 = uiTracePlotter2.createChartPanel("Traces chart - " + tp.getSamplingFrequency(), "Time", "Voltage", panelSize);
+                PreprocessingResult pr = trp.preprocess(trace);
+                UITracePlotter uiTracePlotter2 = new UITracePlotter(pr.getPreprocessedTrace());
+                ChartPanel jfreeChartPanel2 = uiTracePlotter2.createChartPanel("Traces chart - " + pr.getPreprocessedTrace().getSamplingFrequency(), "Time", "Voltage", panelSize);
                 afterChartPanel.add(jfreeChartPanel2, BorderLayout.CENTER);
                 afterChartPanel.validate();
             } catch (IOException exception) {

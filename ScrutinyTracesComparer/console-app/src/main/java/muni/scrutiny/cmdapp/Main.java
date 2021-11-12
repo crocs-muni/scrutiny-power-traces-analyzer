@@ -1,22 +1,6 @@
 package muni.scrutiny.cmdapp;
 
-import com.google.gson.Gson;
-import muni.scrutiny.traces.DataManager;
-import muni.scrutiny.similaritysearch.measures.DistanceMeasure;
-import muni.scrutiny.similaritysearch.measures.EuclideanDistance;
-import muni.scrutiny.configurations.input.compared.NewCardConfig;
-import muni.scrutiny.configurations.input.compared.ComparedCardConfigTrace;
-import muni.scrutiny.configurations.input.reference.ReferenceCardConfig;
-import muni.scrutiny.configurations.input.reference.ReferenceCardConfigTrace;
-import muni.scrutiny.configurations.output.TraceComparisonResult;
-import muni.scrutiny.configurations.output.TracesComparisonResult;
-import muni.scrutiny.traces.models.*;
-
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
-import java.util.Optional;
 
 public class Main {
     public static void main(String[] args) throws IOException {

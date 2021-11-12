@@ -5,14 +5,14 @@ import muni.scrutiny.cmdapp.actions.base.ActionException;
 import muni.scrutiny.cmdapp.actions.base.ActionFlag;
 import muni.scrutiny.cmdapp.actions.base.ActionParameter;
 import muni.scrutiny.cmdapp.actions.base.BaseAction;
-import muni.scrutiny.configurations.input.compared.ComparedCardConfigTrace;
-import muni.scrutiny.configurations.input.compared.NewCardConfig;
-import muni.scrutiny.configurations.input.reference.ReferenceCardConfig;
-import muni.scrutiny.configurations.input.reference.ReferenceCardConfigTrace;
-import muni.scrutiny.configurations.output.TraceComparisonResult;
-import muni.scrutiny.configurations.output.TracesComparisonResult;
-import muni.scrutiny.similaritysearch.measures.DistanceMeasure;
-import muni.scrutiny.similaritysearch.measures.EuclideanDistance;
+import muni.scrutiny.module.configurations.input.compared.ComparedCardConfigTrace;
+import muni.scrutiny.module.configurations.input.compared.NewCardConfig;
+import muni.scrutiny.module.configurations.input.reference.ReferenceCardConfig;
+import muni.scrutiny.module.configurations.input.reference.ReferenceCardConfigTrace;
+import muni.scrutiny.module.configurations.output.TraceComparisonResult;
+import muni.scrutiny.module.configurations.output.TracesComparisonResult;
+import muni.scrutiny.similaritysearch.measures.base.DistanceMeasure;
+import muni.scrutiny.similaritysearch.measures.lnorm.EuclideanDistance;
 import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.traces.models.Trace;
 
@@ -80,49 +80,53 @@ public class CompareProfilesAction extends BaseAction {
 
     @Override
     public void executeAction(String[] arguments) throws ActionException {
-        super.executeAction(arguments);
-        ReferenceCardConfig rcc = getReferenceCardConfig();
-        NewCardConfig ncc = getNewCardConfig();
-        TracesComparisonResult tcr = new TracesComparisonResult();
-        tcr.metric = parameters.get(metricShort).getValueOrDefault();
-//        for (ReferenceCardConfigTrace rct : rcc.traces) {
-//            Optional<ComparedCardConfigTrace> ct = ncc.traces.stream()
-//                    .filter((tr) -> tr.code.equals(rct.code))
-//                    .findFirst();
-//            if (!ct.isPresent()) {
-//                tcr.tracesResults.add(new TraceComparisonResult(rct.code));
-//                continue;
-//            }
-//
-//            String uknownTracePath = ucDirectory + "\\" + ct.get().filepath;
-//            String referenceTracePath = rcDirectory + "\\" + rct.filepath;
-//            Trace unknownTrace = DataManager.loadTrace(Paths.get(uknownTracePath), false);
-//            Trace referenceTrace = DataManager.loadTrace(Paths.get(referenceTracePath), false);
-//            DistanceMeasure dm = new EuclideanDistance();
-//            double[] utv = unknownTrace.getVoltage();
-//            double[] rtv = referenceTrace.getVoltage();
-//            tcr.tracesResults.add(new TraceComparisonResult(
-//                    rct.code,
-//                    dm.compute(utv.length > rtv.length ? rtv : utv, utv.length > rtv.length ? utv : rtv, 0)));
-//        }
+        try {
+            super.executeAction(arguments);
+            Path referenceProfilePath = getParameterAsPath(referenceProfileShort);
+            Path newProfilePath = getParameterAsPath(newProfileShort);
+            ReferenceCardConfig rcc = getReferenceCardConfig(referenceProfilePath);
+            NewCardConfig ncc = getNewCardConfig(newProfilePath);
+            TracesComparisonResult tcr = new TracesComparisonResult();
+            tcr.metric = parameters.get(metricShort).getValueOrDefault();
+            for (ReferenceCardConfigTrace rct : rcc.traces) {
+                Optional<ComparedCardConfigTrace> ct = ncc.traces.stream()
+                        .filter((tr) -> tr.code.equals(rct.code))
+                        .findFirst();
+                if (!ct.isPresent()) {
+                    tcr.tracesResults.add(new TraceComparisonResult(rct.code));
+                    continue;
+                }
 
-        String tcrJson = new Gson().toJson(tcr);
-        String outputFilePath = "result.json";
-        try (PrintWriter out = new PrintWriter(outputFilePath)) {
-            out.println(tcrJson);
+                Path unknownTracePath = Paths.get(newProfilePath.toFile().getParent(), ct.get().filepath);
+                Path referenceTracePath = Paths.get(newProfilePath.toFile().getParent(), rct.filepath);
+                Trace unknownTrace = DataManager.loadTrace(unknownTracePath, false);
+                Trace referenceTrace = DataManager.loadTrace(referenceTracePath, false);
+                DistanceMeasure dm = new EuclideanDistance();
+                double[] utv = unknownTrace.getVoltage();
+                double[] rtv = referenceTrace.getVoltage();
+                tcr.tracesResults.add(new TraceComparisonResult(
+                        rct.code,
+                        dm.compute(utv.length > rtv.length ? rtv : utv, utv.length > rtv.length ? utv : rtv, 0)));
+            }
+
+            String tcrJson = new Gson().toJson(tcr);
+            String outputFilePath = "result.json";
+            try (PrintWriter out = new PrintWriter(outputFilePath)) {
+                out.println(tcrJson);
+            }
         } catch (FileNotFoundException exception) {
+            throw new ActionException(exception);
+        } catch (IOException exception) {
             throw new ActionException(exception);
         }
     }
 
-    private NewCardConfig getNewCardConfig() throws ActionException {
-        Path newProfilePath = Paths.get(parameters.get(newProfileShort).getValueOrDefault());
+    private NewCardConfig getNewCardConfig(Path newProfilePath) throws ActionException {
         String newProfileContent = readFile(newProfilePath);
         return new Gson().fromJson(newProfileContent, NewCardConfig.class);
     }
 
-    private ReferenceCardConfig getReferenceCardConfig() throws ActionException {
-        Path referenceProfilePath = Paths.get(parameters.get(referenceProfileShort).getValueOrDefault());
+    private ReferenceCardConfig getReferenceCardConfig(Path referenceProfilePath) throws ActionException {
         String referenceProfileContent = readFile(referenceProfilePath);
         return new Gson().fromJson(referenceProfileContent, ReferenceCardConfig.class);
     }

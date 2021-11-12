@@ -1,9 +1,15 @@
 package muni.scrutiny.cmdapp.actions.base;
 
-import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public abstract class BaseAction implements IAction {
+    @Override
+    public void executeAction(String[] arguments) throws ActionException {
+        parseArguments(arguments);
+    }
+
     protected void parseArguments(String[] arguments) {
         List<String> parametersCopy = Arrays.asList(arguments);
         List<Integer> indexesToDelete =  new ArrayList<>();
@@ -12,9 +18,8 @@ public abstract class BaseAction implements IAction {
         checkArguments();
     }
 
-    @Override
-    public void executeAction(String[] arguments) throws ActionException {
-        parseArguments(arguments);
+    protected Path getParameterAsPath(String parameterKey) {
+        return Paths.get(getActionParameters().get(parameterKey).getValueOrDefault());
     }
 
     private void parseFlags(List<String> parametersCopy, List<Integer> indexesToDelete) {
