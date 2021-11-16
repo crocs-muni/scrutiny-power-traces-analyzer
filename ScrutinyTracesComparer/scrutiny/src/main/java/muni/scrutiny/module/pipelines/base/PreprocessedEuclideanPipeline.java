@@ -8,15 +8,19 @@ import muni.scrutiny.similaritysearch.preprocessing.resampling.TraceIntervalResa
 import muni.scrutiny.similaritysearch.preprocessing.resampling.intervalprocessor.MeanProcessor;
 import muni.scrutiny.similaritysearch.preprocessing.rescaling.SimpleRescaler;
 
+import java.util.List;
+
 public class PreprocessedEuclideanPipeline extends SlidingWindowTracePipeline {
     public PreprocessedEuclideanPipeline(
             int desiredSamplingFrequency,
+            double referenceMinimum,
             double referenceMaximum,
-            double referenceMinimum) {
+            CustomPipelineParameters customParameters) {
         super(new EuclideanDistance(),
                 new TraceIntervalResampler(desiredSamplingFrequency, new MeanProcessor(), 1),
-                new LowpassFilter(null),
-                new SimpleOffsetNormalizer(referenceMinimum, referenceMaximum, null, null),
-                new SimpleRescaler(referenceMinimum, referenceMaximum, null, null));
+                new LowpassFilter(customParameters.getDoubleParameter("cutoffFrequency")),
+                new SimpleOffsetNormalizer(referenceMinimum, referenceMaximum, customParameters.getDoubleParameter("offset"), customParameters.getDoubleParameter("normalizerInvervalCoefficient")),
+                new SimpleRescaler(referenceMinimum, referenceMaximum, customParameters.getDoubleParameter("scale"), customParameters.getDoubleParameter("scalerInvervalCoefficient")));
     }
+
 }

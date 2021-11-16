@@ -11,8 +11,8 @@ import muni.scrutiny.module.configurations.input.reference.ReferenceCardConfig;
 import muni.scrutiny.module.configurations.input.reference.ReferenceCardConfigTrace;
 import muni.scrutiny.module.configurations.output.TraceComparisonResult;
 import muni.scrutiny.module.configurations.output.TracesComparisonResult;
-import muni.scrutiny.similaritysearch.measures.base.DistanceMeasure;
-import muni.scrutiny.similaritysearch.measures.lnorm.EuclideanDistance;
+import muni.scrutiny.module.pipelines.base.PipelineFactory;
+import muni.scrutiny.similaritysearch.pipelines.base.ComparisonPipeline;
 import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.traces.models.Trace;
 
@@ -90,23 +90,21 @@ public class CompareProfilesAction extends BaseAction {
             tcr.metric = parameters.get(metricShort).getValueOrDefault();
             for (ReferenceCardConfigTrace rct : rcc.traces) {
                 Optional<ComparedCardConfigTrace> ct = ncc.traces.stream()
-                        .filter((tr) -> tr.code.equals(rct.code))
+                        .filter((tr) -> tr.code.equals(rct.primaryCodeName))
                         .findFirst();
                 if (!ct.isPresent()) {
-                    tcr.tracesResults.add(new TraceComparisonResult(rct.code));
+                    tcr.tracesResults.add(new TraceComparisonResult(rct.primaryCodeName));
                     continue;
                 }
 
                 Path unknownTracePath = Paths.get(newProfilePath.toFile().getParent(), ct.get().filepath);
-                Path referenceTracePath = Paths.get(newProfilePath.toFile().getParent(), rct.filepath);
+                Path referenceTracePath = Paths.get(newProfilePath.toFile().getParent(), rct.primaryCodeName);
                 Trace unknownTrace = DataManager.loadTrace(unknownTracePath, false);
                 Trace referenceTrace = DataManager.loadTrace(referenceTracePath, false);
-                DistanceMeasure dm = new EuclideanDistance();
-                double[] utv = unknownTrace.getVoltage();
-                double[] rtv = referenceTrace.getVoltage();
+                ComparisonPipeline cp = PipelineFactory.getInstance(rcc.pipeline, referenceTrace.getSamplingFrequency(), referenceTrace.getMinimalVoltage(), referenceTrace.getMaximalVoltage(), rct.parameters);
                 tcr.tracesResults.add(new TraceComparisonResult(
-                        rct.code,
-                        dm.compute(utv.length > rtv.length ? rtv : utv, utv.length > rtv.length ? utv : rtv, 0)));
+                        rct.primaryCodeName,
+                        cp.compare(referenceTrace, unknownTrace).getBestSimilarity().getDistance()));
             }
 
             String tcrJson = new Gson().toJson(tcr);

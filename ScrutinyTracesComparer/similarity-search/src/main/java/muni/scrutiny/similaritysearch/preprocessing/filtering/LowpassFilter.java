@@ -16,8 +16,8 @@ public class LowpassFilter implements Preprocessor {
     public static final double defaultCutoffFrequency = 20000;
     private double cutoffFrequency;
 
-    public LowpassFilter(Optional<Double> cutoffFrequency) {
-        this.cutoffFrequency = cutoffFrequency.isPresent() ? cutoffFrequency.get() : defaultCutoffFrequency;
+    public LowpassFilter(Double cutoffFrequency) {
+        this.cutoffFrequency = cutoffFrequency != null ? cutoffFrequency : defaultCutoffFrequency;
     }
 
     @Override

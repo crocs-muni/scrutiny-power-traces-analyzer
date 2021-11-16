@@ -10,27 +10,27 @@ public class SimpleRescaler implements Preprocessor {
 
     private final double referenceMinimum;
     private final double referenceMaximum;
-    private final Optional<Double> scale;
+    private final Double scale;
     private final double intervalCoefficient;
 
     public SimpleRescaler(
             double referenceMinimum,
             double referenceMaximum,
-            Optional<Double> scale,
-            Optional<Double> intervalCoefficient) {
+            Double scale,
+            Double intervalCoefficient) {
         this.referenceMinimum = referenceMinimum;
         this.referenceMaximum = referenceMaximum;
         this.scale = scale;
-        this.intervalCoefficient = intervalCoefficient.isPresent() ? intervalCoefficient.get() : defaultIntervalCoefficient;
+        this.intervalCoefficient = intervalCoefficient != null ? intervalCoefficient : defaultIntervalCoefficient;
     }
 
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
         double[] voltageArray = traceToPreprocess.getVoltage();
 
-        if (scale.isPresent()) {
+        if (scale != null) {
             for (int i = 0; i < voltageArray.length; i++) {
-                voltageArray[i] /= scale.get();
+                voltageArray[i] /= scale;
             }
 
             return traceToPreprocess;

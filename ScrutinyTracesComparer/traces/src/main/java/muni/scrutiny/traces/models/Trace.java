@@ -191,7 +191,11 @@ public class Trace {
 
     public double getSamplingFrequencyTimeUnit() {
         if (samplingFrequency > 0) {
-            return BigDecimal.ONE.divide(BigDecimal.valueOf(samplingFrequency), 10, RoundingMode.HALF_UP).doubleValue();
+            return BigDecimal
+                    .ONE
+                    .divide(BigDecimal.valueOf(samplingFrequency), 10, RoundingMode.HALF_UP)
+                    .multiply(UnitsHelper.getInvertedTimeUnitConstant(timeUnit))
+                    .doubleValue();
         }
 
         BigDecimal dT = BigDecimal.valueOf(timeArray[0])
@@ -203,7 +207,7 @@ public class Trace {
                         .setScale(10, RoundingMode.HALF_UP))
                 .abs()
                 .divide(UnitsHelper.getInvertedTimeUnitConstant(timeUnit), 10, RoundingMode.HALF_UP);
-        return dT.doubleValue();
+        return dT.multiply(UnitsHelper.getInvertedTimeUnitConstant(timeUnit)).doubleValue();
     }
     
     public double getMaximalVoltage() {

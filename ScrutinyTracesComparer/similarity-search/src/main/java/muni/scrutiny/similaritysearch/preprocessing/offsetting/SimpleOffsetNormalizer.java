@@ -10,27 +10,27 @@ public class SimpleOffsetNormalizer implements Preprocessor {
 
     private final double referenceMinimum;
     private final double referenceMaximum;
-    private final Optional<Double> offset;
+    private final Double offset;
     private final double intervalCoefficient;
 
     public SimpleOffsetNormalizer(
             double referenceMinimum,
             double referenceMaximum,
-            Optional<Double> offset,
-            Optional<Double> intervalCoefficient) {
+            Double offset,
+            Double intervalCoefficient) {
         this.referenceMinimum = referenceMinimum;
         this.referenceMaximum = referenceMaximum;
         this.offset = offset;
-        this.intervalCoefficient = intervalCoefficient.isPresent() ? intervalCoefficient.get() : defaultIntervalCoefficient;
+        this.intervalCoefficient = intervalCoefficient != null ? intervalCoefficient : defaultIntervalCoefficient;
     }
 
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
         double[] voltageArray = traceToPreprocess.getVoltage();
 
-        if (offset.isPresent()) {
+        if (offset != null) {
             for (int i = 0; i < voltageArray.length; i++) {
-                voltageArray[i] += offset.get();
+                voltageArray[i] += offset;
             }
 
             return traceToPreprocess;
