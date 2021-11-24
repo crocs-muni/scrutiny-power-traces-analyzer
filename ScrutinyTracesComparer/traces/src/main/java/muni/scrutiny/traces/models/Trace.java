@@ -143,6 +143,10 @@ public class Trace {
         return timeArray;
     }
 
+    public double getExecutionTime() {
+        return getSamplingFrequencyTimeUnit() * getDataCount();
+    }
+
     public String getVoltageUnit() {
         return voltageUnit;
     }

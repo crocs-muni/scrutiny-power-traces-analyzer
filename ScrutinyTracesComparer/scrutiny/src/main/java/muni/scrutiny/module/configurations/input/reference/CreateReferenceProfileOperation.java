@@ -5,13 +5,17 @@ import muni.scrutiny.module.pipelines.base.CustomPipelineParameters;
 
 import java.util.List;
 
-public class ReferenceCardConfig {
-    @SerializedName("card_code")
-    public String cardCode;
+public class CreateReferenceProfileOperation {
+    @SerializedName("operation_code")
+    public String operationCode;
 
     @SerializedName("custom_parameters")
     public CustomPipelineParameters customParameters;
 
-    @SerializedName("operations")
-    public List<ReferenceCardOperation> operations;
+    @SerializedName("file_paths")
+    public List<String> filePaths;
+
+    public boolean arePathsSpecified() {
+        return filePaths == null || filePaths.size() == 0;
+    }
 }

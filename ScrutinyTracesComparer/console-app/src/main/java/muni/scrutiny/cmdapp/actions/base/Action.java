@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public interface IAction {
+public interface Action {
     String getName();
     Map<String, ActionParameter> getActionParameters();
     Map<String, ActionFlag> getActionFlags();

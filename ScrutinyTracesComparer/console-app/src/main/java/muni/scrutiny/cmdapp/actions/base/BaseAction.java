@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public abstract class BaseAction implements IAction {
+public abstract class BaseAction implements Action {
     @Override
     public void executeAction(String[] arguments) throws ActionException {
         parseArguments(arguments);
