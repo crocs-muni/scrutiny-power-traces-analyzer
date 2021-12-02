@@ -16,8 +16,11 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.1</version>
                 <configuration>
+                    <finalName>${project.artifactId}</finalName>
                     <archive>
                         <manifest>
                             <mainClass>muni.scrutiny.cmdapp.Main</mainClass>
@@ -26,7 +29,17 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <appendAssemblyId>true</appendAssemblyId>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -62,6 +75,18 @@
         <dependency>
             <groupId>muni.scrutiny</groupId>
             <artifactId>similarity-search</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>muni.scrutiny</groupId>
+            <artifactId>trace-charts</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>muni.scrutiny</groupId>
+            <artifactId>trace-charts</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>

@@ -10,11 +10,24 @@ public abstract class BaseAction implements Action {
         parseArguments(arguments);
     }
 
-    protected void parseArguments(String[] arguments) {
+    @Override
+    public void checkArguments() throws ActionException {
+        System.out.print("Checking arguments...");
+        for (Map.Entry<String, ActionParameter> argument : getActionParameters().entrySet()) {
+            if (argument.getValue().isMandatory() && argument.getValue().getValueOrDefault() == null) {
+                throw new ActionException(argument.getKey() + " is a mandatory parameter");
+            }
+        }
+        System.out.println("OK");
+    }
+
+    protected void parseArguments(String[] arguments) throws ActionException {
+        System.out.print("Parsing arguments...");
         List<String> parametersCopy = Arrays.asList(arguments);
         List<Integer> indexesToDelete =  new ArrayList<>();
         parseParameters(parametersCopy, indexesToDelete);
         parseFlags(parametersCopy, indexesToDelete);
+        System.out.println("OK");
         checkArguments();
     }
 

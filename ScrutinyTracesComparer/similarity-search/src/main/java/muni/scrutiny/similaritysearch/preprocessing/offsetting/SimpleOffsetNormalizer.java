@@ -60,12 +60,10 @@ public class SimpleOffsetNormalizer implements Preprocessor {
 
         return new Trace(
                 traceToPreprocess.getName(),
+                voltageArray.length,
                 traceToPreprocess.getVoltageUnit(),
                 traceToPreprocess.getTimeUnit(),
-                traceToPreprocess.getDataCount(),
                 voltageArray,
-                null,
-                traceToPreprocess.getMaximalVoltage() + averageDiff,
-                traceToPreprocess.getMinimalVoltage() + averageDiff);
+                traceToPreprocess.getSamplingFrequency());
     }
 }

@@ -1,5 +1,6 @@
 package muni.scrutiny.module.pipelines.base;
 
+import muni.scrutiny.similaritysearch.measures.crosscorellation.CrossCorellationDistance;
 import muni.scrutiny.similaritysearch.measures.lnorm.EuclideanDistance;
 import muni.scrutiny.similaritysearch.pipelines.slidingwindow.SlidingWindowTracePipeline;
 import muni.scrutiny.similaritysearch.preprocessing.filtering.LowpassFilter;
@@ -8,17 +9,15 @@ import muni.scrutiny.similaritysearch.preprocessing.resampling.TraceIntervalResa
 import muni.scrutiny.similaritysearch.preprocessing.resampling.intervalprocessor.MeanProcessor;
 import muni.scrutiny.similaritysearch.preprocessing.rescaling.SimpleRescaler;
 
-import java.util.List;
+public class PreprocessedCorrelationPipeline extends SlidingWindowTracePipeline {
+    public static final String name = "pcp";
 
-public class PreprocessedEuclideanPipeline extends SlidingWindowTracePipeline {
-    public static final String name = "pep";
-
-    public PreprocessedEuclideanPipeline(
+    public PreprocessedCorrelationPipeline(
             int desiredSamplingFrequency,
             double referenceMinimum,
             double referenceMaximum,
             CustomPipelineParameters customParameters) {
-        super(new EuclideanDistance(),
+        super(new CrossCorellationDistance(),
                 new TraceIntervalResampler(desiredSamplingFrequency, new MeanProcessor(), 1),
                 new LowpassFilter(customParameters == null ? null :customParameters.getDoubleParameter("cutoffFrequency")),
                 new SimpleOffsetNormalizer(referenceMinimum, referenceMaximum, customParameters == null ? null : customParameters.getDoubleParameter("offset"), customParameters == null ? null :customParameters.getDoubleParameter("normalizerInvervalCoefficient")),

@@ -7,7 +7,10 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.DefaultXYItemRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -17,45 +20,68 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TracePlotter {
+    public static final float CONNECTION_THICKNESS = 0.7f;
     public static final float CHART_THICKNESS = 1.2f;
     public static final Color RED = new Color(219,68,55);
     public static final Color GREEN = new Color(15, 157, 88);
     public static final Color BLUE = new Color(66, 133, 244);
     public static final Color YELLOW = new Color(244, 180, 0);
+    public static final Color BLACK = new Color(0,0,0);
 
     private final List<ChartTrace> traces;
+    private final List<XYSeries> additionalSeries;
 
     public TracePlotter(Trace trace) {
         this.traces = new ArrayList<>();
+        this.additionalSeries = new ArrayList<>();
         traces.add(new ChartTrace(trace, RED));
     }
 
     public TracePlotter(ChartTrace chartTrace) {
         this.traces = new ArrayList<>();
         traces.add(chartTrace);
+        this.additionalSeries = new ArrayList<>();
     }
 
     public TracePlotter(List<ChartTrace> traces) {
         this.traces = traces;
+        this.additionalSeries = new ArrayList<>();
     }
 
-    public List<XYSeries> createXYSeries() {
-        List<XYSeries> xySeriesList = new ArrayList<>();
+    public TracePlotter(List<ChartTrace> traces, List<XYSeries> additionalSeries) {
+        this.traces = traces;
+        this.additionalSeries = additionalSeries;
+    }
+
+    public JFreeChart assignSeriesToChart(JFreeChart chart) {
+        XYPlot xyPlot = chart.getXYPlot();
+        int index = 0;
+
         for (ChartTrace trace : traces) {
-            xySeriesList.add(createXYSeries(trace));
+            xyPlot.setDataset(index, new XYSeriesCollection(createXYSeries(trace)));
+            XYLineAndShapeRenderer renderer = new DefaultXYItemRenderer();
+            renderer.setBaseShapesVisible(false);
+            renderer.setSeriesStroke(0, new BasicStroke(CHART_THICKNESS));
+            renderer.setSeriesPaint(0, trace.getColor());
+            renderer.setSeriesVisibleInLegend(index, true);
+            xyPlot.setRenderer(index, renderer);
+            index++;
         }
 
-        return xySeriesList;
-    }
-
-    public XYSeriesCollection createXYSeriesCollection() {
-        XYSeriesCollection xySeriesCollection = new XYSeriesCollection();
-        List<XYSeries> xySeriesList = createXYSeries();
-        for (XYSeries xySeries : xySeriesList) {
-            xySeriesCollection.addSeries(xySeries);
+        for (XYSeries xySeries : additionalSeries) {
+            xyPlot.setDataset(index, new XYSeriesCollection(xySeries));
+            XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+            renderer.setBaseShapesVisible(false);
+            renderer.setSeriesStroke(0, new BasicStroke(
+                    CONNECTION_THICKNESS, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
+                    CONNECTION_THICKNESS, new float[] {6.0f, 6.0f}, 0.0f));
+            renderer.setSeriesPaint(0, BLACK);
+            renderer.setSeriesVisibleInLegend(0, false);
+            xyPlot.setRenderer(index, renderer);
+            index++;
         }
 
-        return xySeriesCollection;
+        return chart;
     }
 
     public JFreeChart createXYLineChart(String name, String xAxisLabel, String yAxisLabel) {
@@ -63,11 +89,12 @@ public class TracePlotter {
                 name,
                 xAxisLabel,
                 yAxisLabel,
-                createXYSeriesCollection(),
+                null,
                 PlotOrientation.VERTICAL,
                 true,
                 false,
                 false);
+        assignSeriesToChart(chart);
         initBaseProperties(chart);
         return chart;
     }
@@ -77,16 +104,10 @@ public class TracePlotter {
         plot.setBackgroundPaint(Color.WHITE);
         plot.setRangeGridlinePaint(Color.BLACK);
         plot.setDomainGridlinePaint(Color.BLACK);
-
-        for (int i = 0; i < plot.getDatasetCount(); i++) {
-            NumberAxis rangeAxis = (NumberAxis)plot.getRangeAxis(i);
-            rangeAxis.setAutoRangeIncludesZero(false);
-            NumberAxis domainAxis = (NumberAxis)plot.getDomainAxis(i);
-            domainAxis.setAutoRangeIncludesZero(false);
-            XYItemRenderer renderer = plot.getRenderer(i);
-            renderer.setSeriesStroke(i, new BasicStroke(CHART_THICKNESS));
-            renderer.setSeriesPaint(i, traces.get(i).getColor());
-        }
+        NumberAxis rangeAxis = (NumberAxis)plot.getRangeAxis(0);
+        rangeAxis.setAutoRangeIncludesZero(false);
+        NumberAxis domainAxis = (NumberAxis)plot.getDomainAxis(0);
+        domainAxis.setAutoRangeIncludesZero(false);
     }
 
     private static XYSeries createXYSeries(ChartTrace trace) {
@@ -94,7 +115,7 @@ public class TracePlotter {
         XYSeries xySeries = new XYSeries(t.getName(), false, true);
         xySeries.setMaximumItemCount(t.getDataCount());
         double[] voltage = t.getVoltage();
-        double[] time = t.getTime(false);
+        double[] time = t.getTime(false, trace.getIndexOffset());
         for (int i = 0; i < t.getDataCount(); i++) {
             xySeries.add(time[i], voltage[i]);
         }

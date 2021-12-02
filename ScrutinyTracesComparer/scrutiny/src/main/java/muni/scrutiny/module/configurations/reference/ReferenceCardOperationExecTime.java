@@ -1,4 +1,4 @@
-package muni.scrutiny.module.configurations.input.reference;
+package muni.scrutiny.module.configurations.reference;
 
 import com.google.gson.annotations.SerializedName;
 

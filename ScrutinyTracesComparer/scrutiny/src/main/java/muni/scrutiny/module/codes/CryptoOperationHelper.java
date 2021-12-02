@@ -9,8 +9,8 @@ public class CryptoOperationHelper {
         add("ALG_SECURE_RANDOM_128B");
         add("LENGTH_AES_256");
         add("LENGTH_DES3_3KEY");
-        add("ALG_AES_BLOCK_128_CBC_NOPAD");
-        add("ALG_DES_CBC_NOPAD");
+        add("ALG_AES_BLOCK_128_CBC_NOPAD_LENGTH_AES_256");
+        add("ALG_DES_CBC_NOPAD_LENGTH_DES3_3KEY");
         add("ALG_SHA");
         add("ALG_SHA_256");
         add("ALG_RSA_CRT_LENGTH_RSA_512");

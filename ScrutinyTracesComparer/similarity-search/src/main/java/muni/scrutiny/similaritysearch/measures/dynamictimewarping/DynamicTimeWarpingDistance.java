@@ -1,23 +1,18 @@
 package muni.scrutiny.similaritysearch.measures.dynamictimewarping;
 
+import com.dtw.FastDTW;
+import com.dtw.WarpPath;
+import com.timeseries.TimeSeries;
+import com.util.EuclideanDistance;
 import muni.scrutiny.similaritysearch.measures.base.DistanceMeasure;
-import smile.math.distance.DynamicTimeWarping;
 
 public class DynamicTimeWarpingDistance implements DistanceMeasure {
-    public int DEFAULT_RADIUS = 100;
-    private final int radius;
-
-    public DynamicTimeWarpingDistance() {
-        this.radius = DEFAULT_RADIUS;
-    }
-
-    public DynamicTimeWarpingDistance(int radius) {
-        this.radius = radius;
-    }
-
     @Override
     public double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfBiggerVector) {
-        DynamicTimeWarping dtw = new DynamicTimeWarping(new SimpleDistance(), radius);
-        return dtw.d(smallerVector, biggerVector);
+        return FastDTW.getWarpDistBetween(new TimeSeries(smallerVector), new TimeSeries(biggerVector), 100, new EuclideanDistance());
+    }
+
+    public WarpPath getWarpingPath(double[] smallerVector, double[] biggerVector) {
+        return FastDTW.getWarpPathBetween(new TimeSeries(smallerVector), new TimeSeries(biggerVector), 100, new EuclideanDistance());
     }
 }

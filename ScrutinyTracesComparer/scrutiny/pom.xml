@@ -20,6 +20,18 @@
 
     <dependencies>
         <dependency>
+            <groupId>jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.0.13</version>
+        </dependency>
+        <dependency>
+            <groupId>com</groupId>
+            <artifactId>fastdtw</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/FastDTW-1.0.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.8.7</version>
@@ -39,6 +51,12 @@
         <dependency>
             <groupId>muni.scrutiny</groupId>
             <artifactId>similarity-search</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>muni.scrutiny</groupId>
+            <artifactId>trace-charts</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>

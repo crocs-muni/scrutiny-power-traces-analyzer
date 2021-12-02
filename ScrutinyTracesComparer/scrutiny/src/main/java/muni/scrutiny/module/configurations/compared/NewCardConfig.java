@@ -1,4 +1,4 @@
-package muni.scrutiny.module.configurations.input.compared;
+package muni.scrutiny.module.configurations.compared;
 
 import com.google.gson.annotations.SerializedName;
 

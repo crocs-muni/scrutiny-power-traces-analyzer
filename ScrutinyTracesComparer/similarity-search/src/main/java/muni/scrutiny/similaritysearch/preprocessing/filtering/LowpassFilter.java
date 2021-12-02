@@ -23,30 +23,19 @@ public class LowpassFilter implements Preprocessor {
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
         Butterworth butterworth = new Butterworth();
-        butterworth.lowPass(order, traceToPreprocess.getSamplingFrequency(), cutoffFrequency);
+        butterworth.lowPass(order, traceToPreprocess.getSamplingFrequency(), cutoffFrequency, 5);
         double[] voltageArray = traceToPreprocess.getVoltage();
-        double newMinimum = Double.MAX_VALUE;
-        double newMaximum = Double.MIN_VALUE;
+        double firstData = voltageArray[0];
         for (int i = 0; i < voltageArray.length; i++) {
-            voltageArray[i] = butterworth.filter(voltageArray[i]);
-
-            if (voltageArray[i] > newMaximum) {
-                newMaximum = voltageArray[i];
-            }
-
-            if(voltageArray[i] < newMinimum) {
-                newMinimum = voltageArray[i];
-            }
+            voltageArray[i] = butterworth.filter(voltageArray[i] - firstData) + firstData;
         }
 
         return new Trace(
                 traceToPreprocess.getName(),
+                voltageArray.length,
                 traceToPreprocess.getVoltageUnit(),
                 traceToPreprocess.getTimeUnit(),
-                traceToPreprocess.getDataCount(),
                 voltageArray,
-                null,
-                newMaximum,
-                newMinimum);
+                traceToPreprocess.getSamplingFrequency());
     }
 }

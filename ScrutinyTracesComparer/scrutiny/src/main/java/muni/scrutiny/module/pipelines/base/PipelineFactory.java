@@ -12,8 +12,12 @@ public class PipelineFactory {
             double referenceMaximum,
             CustomPipelineParameters customParameters) {
         switch (pipelineName) {
-            case "pep":
+            case PreprocessedEuclideanPipeline.name:
                 return new PreprocessedEuclideanPipeline(desiredSamplingFrequency, referenceMinimum, referenceMaximum, customParameters);
+            case PreprocessedCorrelationPipeline.name:
+                return new PreprocessedCorrelationPipeline(desiredSamplingFrequency, referenceMinimum, referenceMaximum, customParameters);
+            case PreprocessedDynamicWarpingPipeline.name:
+                return new PreprocessedDynamicWarpingPipeline(desiredSamplingFrequency, referenceMinimum, referenceMaximum, customParameters);
             default:
                 return new PreprocessedEuclideanPipeline(desiredSamplingFrequency, referenceMinimum, referenceMaximum, customParameters);
         }

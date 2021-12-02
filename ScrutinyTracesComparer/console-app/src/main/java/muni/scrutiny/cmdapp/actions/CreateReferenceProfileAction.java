@@ -1,25 +1,29 @@
 package muni.scrutiny.cmdapp.actions;
 
 import com.google.gson.Gson;
+import muni.scrutiny.charts.TracePlotter;
+import muni.scrutiny.charts.models.ChartTrace;
 import muni.scrutiny.cmdapp.actions.base.ActionException;
 import muni.scrutiny.cmdapp.actions.base.ActionFlag;
 import muni.scrutiny.cmdapp.actions.base.ActionParameter;
 import muni.scrutiny.cmdapp.actions.base.BaseAction;
-import muni.scrutiny.module.configurations.input.reference.*;
+import muni.scrutiny.cmdapp.actions.utils.FileUtils;
+import muni.scrutiny.module.configurations.reference.*;
 import muni.scrutiny.module.pipelines.base.PipelineFactory;
 import muni.scrutiny.similaritysearch.pipelines.base.ComparisonPipeline;
 import muni.scrutiny.similaritysearch.pipelines.base.ComparisonResult;
-import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.traces.models.Trace;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CreateReferenceProfileAction extends BaseAction {
@@ -34,6 +38,9 @@ public class CreateReferenceProfileAction extends BaseAction {
         parameters = new HashMap<String, ActionParameter>() {{
             put(configShort, new ActionParameter(new ArrayList<String>() {{
                 add(configShort);
+            }}, true, null));
+            put(outputFolderShort, new ActionParameter(new ArrayList<String>() {{
+                add(outputFolderShort);
             }}, true, null));
         }};
         flags = new HashMap<>();
@@ -55,31 +62,42 @@ public class CreateReferenceProfileAction extends BaseAction {
     }
 
     @Override
-    public void checkArguments() {
+    public void checkArguments() throws ActionException {
+        super.checkArguments();
     }
 
     @Override
     public void executeAction(String[] arguments) throws ActionException {
         try {
             super.executeAction(arguments);
-
+            System.out.println("Started reference profile creation");
             Path referenceConfigPath = getParameterAsPath(configShort);
+            System.out.println("Reference profile path:");
+            System.out.println(referenceConfigPath.toAbsolutePath());
             Path outputPath = getParameterAsPath(outputFolderShort);
+            System.out.println("Output path:");
+            System.out.println(outputPath.toAbsolutePath());
             CreateReferenceProfileConfig crpc = getCreateReferenceProfileConfig(referenceConfigPath);
-            List<File> files = getFilesInDirectory(referenceConfigPath);
+            List<File> files = FileUtils.getFilesInDirectory(referenceConfigPath.getParent());
             ReferenceCardConfig rcc = new ReferenceCardConfig();
             rcc.cardCode = crpc.cardCode;
             rcc.customParameters = crpc.customParameters;
             rcc.operations = new ArrayList<>();
+
+            System.out.println("Starting creation of reference profile...");
             for (CreateReferenceProfileOperation crpo : crpc.operations) {
-                List<Path> pathsToOperations = getPathsToOperationTraces(files, crpo);
-                List<Trace> operationTraces = getOperationTraces(pathsToOperations);
+                System.out.println("Operation: " + crpo.operationCode);
+                List<Path> pathsToOperations = FileUtils.getPathsToOperationTraces(files, crpo.filePaths, crpo.operationCode);
+                List<Trace> operationTraces = FileUtils.getOperationTraces(pathsToOperations);
+                System.out.println("Operation traces found: " + operationTraces.size());
                 ReferenceCardOperation rco = new ReferenceCardOperation();
+                rcc.operations.add(rco);
                 rco.operationCode = crpo.operationCode;
                 rco.customParameters = crpo.customParameters;
                 rco.filePaths = pathsToOperations.stream().map(pto -> pto.getFileName().toString()).collect(Collectors.toList());
                 rco.executionTimes = operationTraces.stream().map(ot -> new ReferenceCardOperationExecTime(ot.getTimeUnit(), ot.getExecutionTime())).collect(Collectors.toList());
                 rco.measurements = new ArrayList<>();
+
                 for (String pipelineName : crpc.pipelines) {
                     ReferenceMeasurements rm = new ReferenceMeasurements();
                     rm.pipeline = pipelineName;
@@ -96,69 +114,37 @@ public class CreateReferenceProfileAction extends BaseAction {
                                         ti.getMinimalVoltage(),
                                         ti.getMinimalVoltage(),
                                         crpo.customParameters == null ? crpc.customParameters : crpo.customParameters);
-                                ComparisonResult tcr = cp.compare(ti, tj);
-                                rm.distances.add(tcr.getBestSimilarity().getDistance());
+                                System.out.println("Comparing traces " + ti.getDisplayName() + " and " + tj.getDisplayName() + " with " + pipelineName);
+                                long start = System.currentTimeMillis();
+                                ComparisonResult cr = cp.compare(ti, tj);
+                                long end = System.currentTimeMillis();
+                                System.out.println("Comparison ended in: " + (double)(end-start)/1000 + "s");
+                                String imageName = FileUtils.saveComparisonImage(outputPath, cr.getChart());
+                                System.out.println("Saved image to: " + outputPath.resolve(imageName));
+                                rm.distances.add(cr.getBestSimilarity().getDistance());
                             }
                         }
                     }
                 }
 
                 for (Path pto : pathsToOperations) {
-                    Path copied = Paths.get(outputPath.toAbsolutePath() + pto.getFileName().toString());
+                    Path copied = outputPath.resolve(pto.getFileName());
                     Files.copy(pto, copied, StandardCopyOption.REPLACE_EXISTING);
                 }
-
-                try (PrintWriter out = new PrintWriter(outputPath.toAbsolutePath() + "reference.json")) {
-                    out.println(new Gson().toJson(rco));
-                }
             }
+
+            try (PrintWriter out = new PrintWriter(outputPath.resolve("reference.json").toFile())) {
+                out.println(new Gson().toJson(rcc));
+            }
+
+            System.out.println("Saved resulting comparison to: " + outputPath.resolve("reference.json").toAbsolutePath());
         } catch (IOException ex) {
             throw new ActionException(ex);
         }
     }
 
-    private List<File> getFilesInDirectory(Path referenceConfigPath) {
-        List<File> files = Arrays.stream(referenceConfigPath.getParent().toFile().listFiles())
-                .filter(f -> f.isFile())
-                .collect(Collectors.toList());
-        return files;
-    }
-
-    private List<Path> getPathsToOperationTraces(List<File> files, CreateReferenceProfileOperation crpo) {
-        List<Path> pathsToOperations;
-        if (crpo.arePathsSpecified()) {
-            pathsToOperations = crpo.filePaths.stream().map(sp -> Paths.get(sp)).collect(Collectors.toList());
-        } else {
-            pathsToOperations = files
-                    .stream()
-                    .filter(f -> f.getName().contains(crpo.operationCode))
-                    .map(f -> f.toPath())
-                    .collect(Collectors.toList());
-        }
-
-        return pathsToOperations;
-    }
-
-    private List<Trace> getOperationTraces(List<Path> pathsToOperations) throws IOException {
-        List<Trace> operationTrace = new ArrayList<>();
-        for (Path path : pathsToOperations) {
-            operationTrace.add(DataManager.loadTrace(path, false));
-        }
-
-        return operationTrace;
-    }
-
     private CreateReferenceProfileConfig getCreateReferenceProfileConfig(Path referenceConfig) throws ActionException {
-        String referenceProfileContent = readFile(referenceConfig);
+        String referenceProfileContent = FileUtils.readFile(referenceConfig);
         return new Gson().fromJson(referenceProfileContent, CreateReferenceProfileConfig.class);
-    }
-
-    private static String readFile(Path path) throws ActionException {
-        try {
-            byte[] encoded = Files.readAllBytes(path);
-            return new String(encoded);
-        } catch (IOException exception) {
-            throw new ActionException(exception);
-        }
     }
 }

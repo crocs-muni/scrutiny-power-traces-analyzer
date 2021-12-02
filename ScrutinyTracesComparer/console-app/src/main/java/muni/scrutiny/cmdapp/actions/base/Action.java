@@ -8,6 +8,6 @@ public interface Action {
     String getName();
     Map<String, ActionParameter> getActionParameters();
     Map<String, ActionFlag> getActionFlags();
-    void checkArguments();
+    void checkArguments() throws ActionException;
     void executeAction(String[] arguments) throws ActionException;
 }

@@ -16,9 +16,11 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-math</artifactId>
-            <version>2.6.0</version>
+            <groupId>com</groupId>
+            <artifactId>fastdtw</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/FastDTW-1.0.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>uk.me.berndporr</groupId>
@@ -28,6 +30,24 @@
         <dependency>
             <groupId>muni.scrutiny</groupId>
             <artifactId>traces</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.0.13</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>muni.scrutiny</groupId>
+            <artifactId>trace-charts</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>muni.scrutiny</groupId>
+            <artifactId>trace-charts</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>

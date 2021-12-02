@@ -21,4 +21,9 @@ public class TraceResamplingPipeline extends TracePipeline {
     public ComparisonResult compare(Trace referenceTrace, Trace preprocessedTrace) {
         return null;
     }
+
+    @Override
+    public String getName() {
+        return "resampling";
+    }
 }

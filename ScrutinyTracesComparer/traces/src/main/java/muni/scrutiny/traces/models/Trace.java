@@ -125,11 +125,31 @@ public class Trace {
 
     public String getName() { return name; }
 
+    public String getDisplayName() { return name.replace(".csv", ""); }
+
     public double[] getTime(boolean recalculate)
     {
         if (timeArray == null || recalculate) {
             double samplingFreqTimeUnit = getSamplingFrequencyTimeUnit();
             double nextTime = 0d;
+            double[] time = new double[getDataCount()];
+            for (int i = 0; i < getDataCount(); i++) {
+                time[i] = nextTime;
+                nextTime += samplingFreqTimeUnit;
+            }
+
+            this.timeArray = time;
+            return time;
+        }
+
+        return timeArray;
+    }
+
+    public double[] getTime(boolean recalculate, int indexOffset)
+    {
+        if (timeArray == null || recalculate) {
+            double samplingFreqTimeUnit = getSamplingFrequencyTimeUnit();
+            double nextTime = indexOffset * samplingFreqTimeUnit;
             double[] time = new double[getDataCount()];
             for (int i = 0; i < getDataCount(); i++) {
                 time[i] = nextTime;
