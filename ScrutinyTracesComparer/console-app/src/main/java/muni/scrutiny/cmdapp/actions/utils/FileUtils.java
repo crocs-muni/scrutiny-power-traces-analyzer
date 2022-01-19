@@ -69,7 +69,7 @@ public class FileUtils {
         String imageName = chart.getTitle().getText() + ".png";
         File outputfile = outputPath.resolve(imageName).toFile();
         OutputStream out = new FileOutputStream(outputfile);
-        ChartUtilities.writeChartAsPNG(out, chart,800,600);
+        ChartUtilities.writeChartAsPNG(out, chart,1280,720);
         return imageName;
     }
 }

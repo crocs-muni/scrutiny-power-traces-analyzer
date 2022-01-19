@@ -1,16 +1,16 @@
-package muni.scrutiny.module.configurations.reference;
+package muni.scrutiny.module.configurations.reference.output;
 
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public class ReferenceMeasurements {
-    public ReferenceMeasurements() {
+public class CreateReferenceProfileOutputMeasurements {
+    public CreateReferenceProfileOutputMeasurements() {
         pipeline = null;
         distances = null;
     }
 
-    public ReferenceMeasurements(String pipeline, List<Double> distances) {
+    public CreateReferenceProfileOutputMeasurements(String pipeline, List<Double> distances) {
         this.pipeline = pipeline;
         this.distances = distances;
     }

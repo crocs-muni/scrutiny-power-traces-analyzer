@@ -1,26 +1,24 @@
 package muni.scrutiny.cmdapp.actions;
 
 import com.google.gson.Gson;
-import muni.scrutiny.charts.TracePlotter;
-import muni.scrutiny.charts.models.ChartTrace;
 import muni.scrutiny.cmdapp.actions.base.ActionException;
 import muni.scrutiny.cmdapp.actions.base.ActionFlag;
 import muni.scrutiny.cmdapp.actions.base.ActionParameter;
 import muni.scrutiny.cmdapp.actions.base.BaseAction;
 import muni.scrutiny.cmdapp.actions.utils.FileUtils;
-import muni.scrutiny.module.configurations.compared.ComparedCardConfigTrace;
-import muni.scrutiny.module.configurations.compared.NewCardConfig;
-import muni.scrutiny.module.configurations.compared.TraceComparisonResult;
-import muni.scrutiny.module.configurations.compared.TracesComparisonResult;
-import muni.scrutiny.module.configurations.reference.ReferenceCardConfig;
-import muni.scrutiny.module.configurations.reference.ReferenceCardOperation;
-import muni.scrutiny.module.configurations.reference.ReferenceMeasurements;
+import muni.scrutiny.module.configurations.compared.input.ProfilesComparisonInputOperation;
+import muni.scrutiny.module.configurations.compared.input.ProfilesComparisonInput;
+import muni.scrutiny.module.configurations.compared.output.ProfilesComparisonOutputOperation;
+import muni.scrutiny.module.configurations.compared.output.ProfilesComparisonOutput;
+import muni.scrutiny.module.configurations.module.ScrutinyModule;
+import muni.scrutiny.module.configurations.module.ScrutinyModules;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutput;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutputOperation;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutputMeasurements;
 import muni.scrutiny.module.pipelines.base.PipelineFactory;
 import muni.scrutiny.similaritysearch.pipelines.base.ComparisonPipeline;
 import muni.scrutiny.similaritysearch.pipelines.base.ComparisonResult;
 import muni.scrutiny.traces.models.Trace;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -77,21 +75,21 @@ public class CompareProfilesAction extends BaseAction {
             System.out.println("New profile path:");
             System.out.println(newProfilePath.toAbsolutePath());
             Path outputPath = newProfilePath.getParent();
-            ReferenceCardConfig rcc = getReferenceCardConfig(referenceProfilePath);
-            NewCardConfig ncc = getNewCardConfig(newProfilePath);
+            CreateReferenceProfileOutput rcc = getReferenceCardConfig(referenceProfilePath);
+            ProfilesComparisonInput ncc = getNewCardConfig(newProfilePath);
             List<File> referenceFiles = FileUtils.getFilesInDirectory(referenceProfilePath.getParent());
             List<File> newFiles = FileUtils.getFilesInDirectory(newProfilePath.getParent());
-            TracesComparisonResult tcrs = new TracesComparisonResult();
+            ProfilesComparisonOutput tcrs = new ProfilesComparisonOutput();
             tcrs.tracesResults = new ArrayList<>();
 
             System.out.println("Starting comparison...");
-            for (ReferenceCardOperation rco : rcc.operations) {
+            for (CreateReferenceProfileOutputOperation rco : rcc.operations) {
                 System.out.println("Operation: " + rco.operationCode);
-                Optional<ComparedCardConfigTrace> ct = ncc.traces.stream()
+                Optional<ProfilesComparisonInputOperation> ct = ncc.traces.stream()
                         .filter((tr) -> tr.operationCode.equals(rco.operationCode))
                         .findFirst();
                 if (!ct.isPresent()) {
-                    tcrs.tracesResults.add(new TraceComparisonResult(rco.operationCode));
+                    tcrs.tracesResults.add(new ProfilesComparisonOutputOperation(rco.operationCode));
                     continue;
                 }
 
@@ -102,8 +100,8 @@ public class CompareProfilesAction extends BaseAction {
                 System.out.println("Reference traces found: " + referenceOperationTraces.size());
                 System.out.println("New traces found: " + newOperationTraces.size());
 
-                for (ReferenceMeasurements rm : rco.measurements) {
-                    TraceComparisonResult tcr = new TraceComparisonResult();
+                for (CreateReferenceProfileOutputMeasurements rm : rco.measurements) {
+                    ProfilesComparisonOutputOperation tcr = new ProfilesComparisonOutputOperation();
                     tcr.operationPresent = true;
                     tcr.operationCode = rco.operationCode;
                     tcr.comparisonResults = new ArrayList<>();
@@ -131,9 +129,12 @@ public class CompareProfilesAction extends BaseAction {
                 }
             }
 
-            String tcrJson = new Gson().toJson(tcrs);
             try (PrintWriter out = new PrintWriter(outputPath.resolve("comparison_result.json").toFile())) {
-                out.println(tcrJson);
+                ScrutinyModules scrutinyModules = new ScrutinyModules();
+                ScrutinyModule<ProfilesComparisonOutput> scrutinyModule = new ScrutinyModule<>();
+                scrutinyModule.data = tcrs;
+                scrutinyModules.modules.put("TRACES_COMPARER", scrutinyModule);
+                out.println(new Gson().toJson(scrutinyModules));
             }
 
             System.out.println("Saved resulting comparison to: " + outputPath.resolve("comparison_result.json").toAbsolutePath());
@@ -144,13 +145,13 @@ public class CompareProfilesAction extends BaseAction {
         }
     }
 
-    private NewCardConfig getNewCardConfig(Path newProfilePath) throws ActionException {
+    private ProfilesComparisonInput getNewCardConfig(Path newProfilePath) throws ActionException {
         String newProfileContent = FileUtils.readFile(newProfilePath);
-        return new Gson().fromJson(newProfileContent, NewCardConfig.class);
+        return new Gson().fromJson(newProfileContent, ProfilesComparisonInput.class);
     }
 
-    private ReferenceCardConfig getReferenceCardConfig(Path referenceProfilePath) throws ActionException {
+    private CreateReferenceProfileOutput getReferenceCardConfig(Path referenceProfilePath) throws ActionException {
         String referenceProfileContent = FileUtils.readFile(referenceProfilePath);
-        return new Gson().fromJson(referenceProfileContent, ReferenceCardConfig.class);
+        return new Gson().fromJson(referenceProfileContent, CreateReferenceProfileOutput.class);
     }
 }

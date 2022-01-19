@@ -1,20 +1,23 @@
 package muni.scrutiny.cmdapp.actions;
 
 import com.google.gson.Gson;
-import muni.scrutiny.charts.TracePlotter;
-import muni.scrutiny.charts.models.ChartTrace;
 import muni.scrutiny.cmdapp.actions.base.ActionException;
 import muni.scrutiny.cmdapp.actions.base.ActionFlag;
 import muni.scrutiny.cmdapp.actions.base.ActionParameter;
 import muni.scrutiny.cmdapp.actions.base.BaseAction;
 import muni.scrutiny.cmdapp.actions.utils.FileUtils;
-import muni.scrutiny.module.configurations.reference.*;
+import muni.scrutiny.module.configurations.module.ScrutinyModule;
+import muni.scrutiny.module.configurations.module.ScrutinyModules;
+import muni.scrutiny.module.configurations.reference.input.CreateReferenceProfileInput;
+import muni.scrutiny.module.configurations.reference.input.CreateReferenceProfileInputOperation;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutput;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutputOperation;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutputOperationExecTime;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutputMeasurements;
 import muni.scrutiny.module.pipelines.base.PipelineFactory;
 import muni.scrutiny.similaritysearch.pipelines.base.ComparisonPipeline;
 import muni.scrutiny.similaritysearch.pipelines.base.ComparisonResult;
 import muni.scrutiny.traces.models.Trace;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -77,29 +80,29 @@ public class CreateReferenceProfileAction extends BaseAction {
             Path outputPath = getParameterAsPath(outputFolderShort);
             System.out.println("Output path:");
             System.out.println(outputPath.toAbsolutePath());
-            CreateReferenceProfileConfig crpc = getCreateReferenceProfileConfig(referenceConfigPath);
+            CreateReferenceProfileInput crpc = getCreateReferenceProfileConfig(referenceConfigPath);
             List<File> files = FileUtils.getFilesInDirectory(referenceConfigPath.getParent());
-            ReferenceCardConfig rcc = new ReferenceCardConfig();
+            CreateReferenceProfileOutput rcc = new CreateReferenceProfileOutput();
             rcc.cardCode = crpc.cardCode;
             rcc.customParameters = crpc.customParameters;
             rcc.operations = new ArrayList<>();
 
             System.out.println("Starting creation of reference profile...");
-            for (CreateReferenceProfileOperation crpo : crpc.operations) {
+            for (CreateReferenceProfileInputOperation crpo : crpc.operations) {
                 System.out.println("Operation: " + crpo.operationCode);
                 List<Path> pathsToOperations = FileUtils.getPathsToOperationTraces(files, crpo.filePaths, crpo.operationCode);
                 List<Trace> operationTraces = FileUtils.getOperationTraces(pathsToOperations);
                 System.out.println("Operation traces found: " + operationTraces.size());
-                ReferenceCardOperation rco = new ReferenceCardOperation();
+                CreateReferenceProfileOutputOperation rco = new CreateReferenceProfileOutputOperation();
                 rcc.operations.add(rco);
                 rco.operationCode = crpo.operationCode;
                 rco.customParameters = crpo.customParameters;
                 rco.filePaths = pathsToOperations.stream().map(pto -> pto.getFileName().toString()).collect(Collectors.toList());
-                rco.executionTimes = operationTraces.stream().map(ot -> new ReferenceCardOperationExecTime(ot.getTimeUnit(), ot.getExecutionTime())).collect(Collectors.toList());
+                rco.executionTimes = operationTraces.stream().map(ot -> new CreateReferenceProfileOutputOperationExecTime(ot.getTimeUnit(), ot.getExecutionTime())).collect(Collectors.toList());
                 rco.measurements = new ArrayList<>();
 
                 for (String pipelineName : crpc.pipelines) {
-                    ReferenceMeasurements rm = new ReferenceMeasurements();
+                    CreateReferenceProfileOutputMeasurements rm = new CreateReferenceProfileOutputMeasurements();
                     rm.pipeline = pipelineName;
                     rm.distances = new ArrayList<>();
                     rco.measurements.add(rm);
@@ -134,7 +137,11 @@ public class CreateReferenceProfileAction extends BaseAction {
             }
 
             try (PrintWriter out = new PrintWriter(outputPath.resolve("reference.json").toFile())) {
-                out.println(new Gson().toJson(rcc));
+                ScrutinyModules scrutinyModules = new ScrutinyModules();
+                ScrutinyModule<CreateReferenceProfileOutput> scrutinyModule = new ScrutinyModule<>();
+                scrutinyModule.data = rcc;
+                scrutinyModules.modules.put("TRACES_COMPARER", scrutinyModule);
+                out.println(new Gson().toJson(scrutinyModules));
             }
 
             System.out.println("Saved resulting comparison to: " + outputPath.resolve("reference.json").toAbsolutePath());
@@ -143,8 +150,8 @@ public class CreateReferenceProfileAction extends BaseAction {
         }
     }
 
-    private CreateReferenceProfileConfig getCreateReferenceProfileConfig(Path referenceConfig) throws ActionException {
+    private CreateReferenceProfileInput getCreateReferenceProfileConfig(Path referenceConfig) throws ActionException {
         String referenceProfileContent = FileUtils.readFile(referenceConfig);
-        return new Gson().fromJson(referenceProfileContent, CreateReferenceProfileConfig.class);
+        return new Gson().fromJson(referenceProfileContent, CreateReferenceProfileInput.class);
     }
 }

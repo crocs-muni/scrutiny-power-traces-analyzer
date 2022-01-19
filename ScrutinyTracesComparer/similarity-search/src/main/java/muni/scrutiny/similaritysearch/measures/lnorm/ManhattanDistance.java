@@ -19,4 +19,18 @@ public class ManhattanDistance implements DistanceMeasure {
         }
         return sum;
     }
+
+    @Override
+    public double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfSmallerVector, int firstIndexOfBiggerVector, int takeN) {
+        double sum = 0;
+        for (int i = firstIndexOfSmallerVector; i < Math.min(firstIndexOfSmallerVector + takeN, smallerVector.length - 1); i++) {
+            if (firstIndexOfSmallerVector + i > smallerVector.length - 1
+                    || firstIndexOfBiggerVector + i > biggerVector.length - 1) {
+                break;
+            }
+
+            sum += Math.abs(smallerVector[i] - biggerVector[firstIndexOfBiggerVector + i]);
+        }
+        return sum;
+    }
 }

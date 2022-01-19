@@ -61,11 +61,11 @@ public class PreprocessedDynamicWarpingPipeline extends TracePipeline<Comparison
         Trace tnScaled = new Trace(tn.getName(), tn.getDataCount(), tn.getVoltageUnit(), tn.getTimeUnit(), prepNewVoltageScaled, tn.getSamplingFrequency());
         List<ChartTrace> chartTraces = new ArrayList<>();
         if (tr.getDataCount() > tn.getDataCount()) {
-            chartTraces.add(new ChartTrace(tr, TracePlotter.GREEN));
-            chartTraces.add(new ChartTrace(tnScaled, TracePlotter.RED, 0));
+            chartTraces.add(new ChartTrace(tr, TracePlotter.BLUE, TracePlotter.basicDashedStroke));
+            chartTraces.add(new ChartTrace(tnScaled, TracePlotter.YELLOW, 0));
         } else {
-            chartTraces.add(new ChartTrace(tr, TracePlotter.GREEN, 0));
-            chartTraces.add(new ChartTrace(tnScaled, TracePlotter.RED));
+            chartTraces.add(new ChartTrace(tr, TracePlotter.BLUE, 0, TracePlotter.basicDashedStroke));
+            chartTraces.add(new ChartTrace(tnScaled, TracePlotter.YELLOW));
         }
 
         int jumpSize = warpingPath.size() > 10000 ? (int)Math.ceil((double)warpingPath.size() / 100) : 1;

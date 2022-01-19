@@ -1,11 +1,12 @@
-package muni.scrutiny.module.configurations.reference;
+package muni.scrutiny.module.configurations.reference.input;
 
 import com.google.gson.annotations.SerializedName;
 import muni.scrutiny.module.pipelines.base.CustomPipelineParameters;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-public class CreateReferenceProfileConfig {
+public class CreateReferenceProfileInput {
     @SerializedName("card_code")
     public String cardCode;
 
@@ -16,5 +17,11 @@ public class CreateReferenceProfileConfig {
     public CustomPipelineParameters customParameters;
 
     @SerializedName("operations")
-    public List<CreateReferenceProfileOperation> operations;
+    public List<CreateReferenceProfileInputOperation> operations;
+
+    @SerializedName("created_by")
+    public String createdBy;
+
+    @SerializedName("additional_info")
+    public String additionalInfo;
 }

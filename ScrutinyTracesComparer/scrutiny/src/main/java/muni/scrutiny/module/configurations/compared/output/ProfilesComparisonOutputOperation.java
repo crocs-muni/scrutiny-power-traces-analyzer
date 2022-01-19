@@ -1,20 +1,20 @@
-package muni.scrutiny.module.configurations.compared;
+package muni.scrutiny.module.configurations.compared.output;
 
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public class TraceComparisonResult {
-    public TraceComparisonResult() {
+public class ProfilesComparisonOutputOperation {
+    public ProfilesComparisonOutputOperation() {
     }
 
-    public TraceComparisonResult(String operationCode, List<Double> comparisonResults) {
+    public ProfilesComparisonOutputOperation(String operationCode, List<Double> comparisonResults) {
         this.operationCode = operationCode;
         this.comparisonResults = comparisonResults;
         this.operationPresent = true;
     }
 
-    public TraceComparisonResult(String operationCode) {
+    public ProfilesComparisonOutputOperation(String operationCode) {
         this.operationCode = operationCode;
         this.operationPresent = false;
     }

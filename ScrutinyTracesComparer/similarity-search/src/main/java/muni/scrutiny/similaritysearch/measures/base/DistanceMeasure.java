@@ -8,4 +8,5 @@ package muni.scrutiny.similaritysearch.measures.base;
  */
 public interface DistanceMeasure {
     public double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfBiggerVector);
+    public double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfSmallerVector, int firstIndexOfBiggerVector, int takeN);
 }

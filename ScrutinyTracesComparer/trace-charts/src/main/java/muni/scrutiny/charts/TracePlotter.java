@@ -8,24 +8,31 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.DefaultXYItemRenderer;
-import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-import java.awt.Color;
-import java.awt.BasicStroke;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TracePlotter {
     public static final float CONNECTION_THICKNESS = 0.7f;
     public static final float CHART_THICKNESS = 1.2f;
+
+    public static final Stroke basicChartStroke = new BasicStroke(CHART_THICKNESS);
+    public static final Stroke basicDashedStroke = new BasicStroke(
+            CHART_THICKNESS, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
+            CHART_THICKNESS, new float[] {6.0f, 6.0f}, 0.0f);
+    public static final Stroke connectionDashedStroke = new BasicStroke(
+            CONNECTION_THICKNESS, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
+            CONNECTION_THICKNESS, new float[] {6.0f, 6.0f}, 0.0f);
+
     public static final Color RED = new Color(219,68,55);
     public static final Color GREEN = new Color(15, 157, 88);
     public static final Color BLUE = new Color(66, 133, 244);
     public static final Color YELLOW = new Color(244, 180, 0);
+    public static final Color ORANGE = new Color(255, 165, 0);
     public static final Color BLACK = new Color(0,0,0);
 
     private final List<ChartTrace> traces;
@@ -61,7 +68,7 @@ public class TracePlotter {
             xyPlot.setDataset(index, new XYSeriesCollection(createXYSeries(trace)));
             XYLineAndShapeRenderer renderer = new DefaultXYItemRenderer();
             renderer.setBaseShapesVisible(false);
-            renderer.setSeriesStroke(0, new BasicStroke(CHART_THICKNESS));
+            renderer.setSeriesStroke(0, trace.getStroke());
             renderer.setSeriesPaint(0, trace.getColor());
             renderer.setSeriesVisibleInLegend(index, true);
             xyPlot.setRenderer(index, renderer);
@@ -72,9 +79,7 @@ public class TracePlotter {
             xyPlot.setDataset(index, new XYSeriesCollection(xySeries));
             XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
             renderer.setBaseShapesVisible(false);
-            renderer.setSeriesStroke(0, new BasicStroke(
-                    CONNECTION_THICKNESS, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
-                    CONNECTION_THICKNESS, new float[] {6.0f, 6.0f}, 0.0f));
+            renderer.setSeriesStroke(0, connectionDashedStroke);
             renderer.setSeriesPaint(0, BLACK);
             renderer.setSeriesVisibleInLegend(0, false);
             xyPlot.setRenderer(index, renderer);
@@ -108,6 +113,15 @@ public class TracePlotter {
         rangeAxis.setAutoRangeIncludesZero(false);
         NumberAxis domainAxis = (NumberAxis)plot.getDomainAxis(0);
         domainAxis.setAutoRangeIncludesZero(false);
+    }
+
+    public static Color getColor(double power)
+    {
+        double H = 0; // Hue
+        double S = power; // Saturation
+        double B = 1.9; // Brightness
+
+        return Color.getHSBColor((float)H, (float)S, (float)B);
     }
 
     private static XYSeries createXYSeries(ChartTrace trace) {

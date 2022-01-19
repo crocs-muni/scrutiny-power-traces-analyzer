@@ -30,7 +30,7 @@ public class DataLoader {
         String timeUnit;
         String voltageUnit;
         double timeValue;
-        double voltageValue;
+        float voltageValue;
 
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath.toFile()))) {
             try (CSVReader csvReader = new CSVReader(bufferedReader)) {
@@ -48,7 +48,7 @@ public class DataLoader {
                 Trace trace = new Trace(filePath.getFileName().toString(), linesInCsv, voltageUnit, timeUnit, sf, loadTime);
                 while ((csvRow = csvReader.readNext()) != null && positionIndex < linesInCsv) {
                     timeValue = Double.parseDouble(csvRow[timeColumn]);
-                    voltageValue = Double.parseDouble(csvRow[voltageColumn]);
+                    voltageValue = Float.parseFloat(csvRow[voltageColumn]);
                     trace.addData(voltageValue, timeValue, positionIndex);
                     positionIndex++;
                 }

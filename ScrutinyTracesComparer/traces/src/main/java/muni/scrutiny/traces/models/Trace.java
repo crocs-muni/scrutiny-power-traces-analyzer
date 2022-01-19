@@ -163,6 +163,16 @@ public class Trace {
         return timeArray;
     }
 
+    public double getVoltageOnIndex(int index)
+    {
+        return voltageArray[index];
+    }
+
+    public double getTimeOnIndex(int index)
+    {
+        return timeArray[index];
+    }
+
     public double getExecutionTime() {
         return getSamplingFrequencyTimeUnit() * getDataCount();
     }
@@ -171,8 +181,17 @@ public class Trace {
         return voltageUnit;
     }
 
+    public String getDisplayVoltageUnit() {
+
+        return "U" + voltageUnit;
+    }
+
     public String getTimeUnit() {
         return timeUnit;
+    }
+
+    public String getDisplayTimeUnit() {
+        return "t" + timeUnit;
     }
 
     public int getDataCount() {

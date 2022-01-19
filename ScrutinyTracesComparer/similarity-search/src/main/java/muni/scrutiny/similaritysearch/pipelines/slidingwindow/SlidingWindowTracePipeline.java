@@ -9,9 +9,14 @@ import muni.scrutiny.similaritysearch.pipelines.base.Similarity;
 import muni.scrutiny.similaritysearch.pipelines.base.TracePipeline;
 import muni.scrutiny.similaritysearch.preprocessing.base.Preprocessor;
 import muni.scrutiny.traces.models.Trace;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.IntervalMarker;
+import org.jfree.ui.Layer;
 
+import java.awt.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public abstract class SlidingWindowTracePipeline extends TracePipeline<ComparisonResult> {
@@ -35,13 +40,60 @@ public abstract class SlidingWindowTracePipeline extends TracePipeline<Compariso
     public ComparisonResult compare(Trace referenceTrace, Trace newTrace) {
         PreprocessingResult prepResultNewTrace = preprocess(newTrace);
         PreprocessingResult prepResultReferenceTrace = preprocess(referenceTrace);
+        Trace newPreprocessedTrace = prepResultNewTrace.getPreprocessedTrace();
+        Trace referencePreprocessedTrace = prepResultReferenceTrace.getPreprocessedTrace();
+        Trace biggerTrace = referencePreprocessedTrace.getDataCount() >= newPreprocessedTrace.getDataCount()
+                ? referencePreprocessedTrace
+                : newPreprocessedTrace;
+        Trace smallerTrace = referencePreprocessedTrace.getDataCount() < newPreprocessedTrace.getDataCount()
+                ? referencePreprocessedTrace
+                : newPreprocessedTrace;
 
-        double[] biggerVoltageArray = prepResultReferenceTrace.getPreprocessedTrace().getDataCount() >= prepResultNewTrace.getPreprocessedTrace().getDataCount()
-                ? prepResultReferenceTrace.getPreprocessedTrace().getVoltage()
-                : prepResultNewTrace.getPreprocessedTrace().getVoltage();
-        double[] smallerVoltageArray = prepResultReferenceTrace.getPreprocessedTrace().getDataCount() < prepResultNewTrace.getPreprocessedTrace().getDataCount()
-                ? prepResultReferenceTrace.getPreprocessedTrace().getVoltage()
-                : prepResultNewTrace.getPreprocessedTrace().getVoltage();
+        double[] biggerVoltageArray = biggerTrace.getVoltage();
+        double[] smallerVoltageArray = smallerTrace.getVoltage();
+
+        Similarity bestSimilarity = findBestSimilarity(biggerVoltageArray, smallerVoltageArray);
+
+        IntervalsDistances distancesIntervals = computeIntervalDistances(biggerVoltageArray, smallerVoltageArray, bestSimilarity);
+
+        List<ChartTrace> chartTraces = new ArrayList<>();
+        if (referencePreprocessedTrace.getDataCount() > newPreprocessedTrace.getDataCount()) {
+            chartTraces.add(new ChartTrace(referencePreprocessedTrace, TracePlotter.BLUE, TracePlotter.basicChartStroke));
+            chartTraces.add(new ChartTrace(newPreprocessedTrace, TracePlotter.ORANGE, bestSimilarity.getFirstIndex()));
+        } else {
+            chartTraces.add(new ChartTrace(referencePreprocessedTrace, TracePlotter.BLUE, bestSimilarity.getFirstIndex(), TracePlotter.basicDashedStroke));
+            chartTraces.add(new ChartTrace(newPreprocessedTrace, TracePlotter.ORANGE));
+        }
+
+        TracePlotter tp = new TracePlotter(chartTraces);
+        String imageName = getName() + "_" + referencePreprocessedTrace.getDisplayName() + "-" + newPreprocessedTrace.getDisplayName();
+        JFreeChart jfc = tp.createXYLineChart(imageName, referencePreprocessedTrace.getDisplayTimeUnit(), referencePreprocessedTrace.getDisplayVoltageUnit());
+        for (IntervalDistance intervalDistance : distancesIntervals.getIntervalDistances()) {
+            double from = biggerTrace.getTimeOnIndex(intervalDistance.getFrom());
+            double to = biggerTrace.getTimeOnIndex(intervalDistance.getTo());
+            IntervalMarker marker = new IntervalMarker(from, to);
+            marker.setPaint(TracePlotter.getColor(intervalDistance.getDistance()/distancesIntervals.getMaximalDistance()));
+            marker.setAlpha(0.1f);
+            jfc.getXYPlot().addDomainMarker(marker, Layer.BACKGROUND);
+        }
+
+        return new ComparisonResult(prepResultReferenceTrace.getPreprocessedTrace(), prepResultNewTrace.getPreprocessedTrace(), bestSimilarity, jfc);
+    }
+
+    private IntervalsDistances computeIntervalDistances(double[] biggerVoltageArray, double[] smallerVoltageArray, Similarity bestSimilarity) {
+        int intervalLength = Math.max(1, smallerVoltageArray.length / 100);
+        IntervalsDistances distancesIntervals = new IntervalsDistances();
+        for (int i = 0; i < smallerVoltageArray.length; i += intervalLength) {
+            int firstIndexBiggerVector = bestSimilarity.getFirstIndex() + i;
+            int firstIndexSmallerVector = i;
+            double dist = distanceMeasure.compute(smallerVoltageArray, biggerVoltageArray, firstIndexSmallerVector, firstIndexBiggerVector, intervalLength);
+            distancesIntervals.addDistance(firstIndexBiggerVector, Math.min(firstIndexBiggerVector + intervalLength, biggerVoltageArray.length - 1), dist);
+        }
+
+        return distancesIntervals;
+    }
+
+    private Similarity findBestSimilarity(double[] biggerVoltageArray, double[] smallerVoltageArray) {
         int windowStart = 0;
         int windowEnd = smallerVoltageArray.length - 1;
         Similarity bestSimilarity = new Similarity(windowStart, windowEnd, Double.MAX_VALUE);
@@ -55,21 +107,54 @@ public abstract class SlidingWindowTracePipeline extends TracePipeline<Compariso
             windowEnd += windowJump;
         }
 
-        Trace tr = prepResultReferenceTrace.getPreprocessedTrace();
-        Trace tn = prepResultNewTrace.getPreprocessedTrace();
-        List<ChartTrace> chartTraces = new ArrayList<>();
-        if (tr.getDataCount() > tn.getDataCount()) {
-            chartTraces.add(new ChartTrace(tr, TracePlotter.GREEN));
-            chartTraces.add(new ChartTrace(tn, TracePlotter.RED, bestSimilarity.getFirstIndex()));
-        } else {
-            chartTraces.add(new ChartTrace(tr, TracePlotter.GREEN, bestSimilarity.getFirstIndex()));
-            chartTraces.add(new ChartTrace(tn, TracePlotter.RED));
+        return bestSimilarity;
+    }
+}
+
+class IntervalsDistances {
+    private List<IntervalDistance> intervalDistances = new ArrayList<>();
+    private double maximalDistance = Double.MIN_VALUE;
+
+    public IntervalsDistances() {
+    }
+
+    public List<IntervalDistance> getIntervalDistances() {
+        return intervalDistances;
+    }
+
+    public double getMaximalDistance() {
+        return maximalDistance;
+    }
+
+    public void addDistance(int from, int to, double distance) {
+        if (distance > maximalDistance) {
+            maximalDistance = distance;
         }
 
-        TracePlotter tp = new TracePlotter(chartTraces);
-        String imageName = getName() + "_" + tr.getDisplayName() + "-" + tn.getDisplayName();
-        JFreeChart jfc = tp.createXYLineChart(imageName, "t" + tr.getTimeUnit(), "U" + tr.getVoltageUnit());
+        intervalDistances.add(new IntervalDistance(from, to, distance));
+    }
+}
 
-        return new ComparisonResult(prepResultReferenceTrace.getPreprocessedTrace(), prepResultNewTrace.getPreprocessedTrace(), bestSimilarity, jfc);
+class IntervalDistance {
+    private int from;
+    private int to;
+    private double distance;
+
+    public IntervalDistance(int from, int to, double distance) {
+        this.from = from;
+        this.to = to;
+        this.distance = distance;
+    }
+
+    public int getFrom() {
+        return from;
+    }
+
+    public int getTo() {
+        return to;
+    }
+
+    public double getDistance() {
+        return distance;
     }
 }
