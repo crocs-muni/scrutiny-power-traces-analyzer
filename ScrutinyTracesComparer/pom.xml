@@ -17,7 +17,6 @@
         <module>console-app</module>
         <module>trace-charts</module>
         <module>testing-gui</module>
-        <module>test-dtw</module>
         <module>co-template</module>
     </modules>
 
