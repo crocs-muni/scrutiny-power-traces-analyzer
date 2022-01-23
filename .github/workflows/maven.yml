@@ -12,7 +12,7 @@ on:
       artifacts:
         description: 'Artifact paths'
         required: false
-        default: 'ScrutinyTracesComparer/testing-gui/target/testing-gui-jar-with-dependencies.jar'
+        default: 'ScrutinyTracesComparer/testing-gui/target/testing-gui-jar-with-dependencies.jar,ScrutinyTracesComparer/console-app/target/console-app-jar-with-dependencies.jar'
       description:
         description: 'Description'     
         required: false
