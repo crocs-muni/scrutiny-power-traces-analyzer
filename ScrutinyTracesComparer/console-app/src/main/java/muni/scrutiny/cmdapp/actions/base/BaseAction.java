@@ -45,7 +45,7 @@ public abstract class BaseAction implements Action {
                         .stream()
                         .filter(name -> parametersCopy.get(index).equals(name))
                         .findFirst();
-                if (parameter.isPresent() && (index + 1) < parametersCopy.size()) {
+                if (parameter.isPresent() && (index) < parametersCopy.size()) {
                     argument.getValue().setValue(true);
                     break;
                 }
