@@ -1,0 +1,10 @@
+{
+    "mask":"XXXXXXXXXXXXXXXX",
+    "mask_elements":
+    [
+        {
+            "mask_element":"X",
+            "times":[0.00041]
+        }
+    ]
+}
