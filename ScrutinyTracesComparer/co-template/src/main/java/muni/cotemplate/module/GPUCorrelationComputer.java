@@ -41,46 +41,36 @@ public class GPUCorrelationComputer implements Runnable {
         final int characterCountLocal = characterCount;
         final int segmentWidthLocal = segmentWidth;
         Kernel kernel = new Kernel() {
-            @Local final float[] averageSegment = new float[segmentWidthLocal];
-
             @Override
             public void run() {
                 int windowIndex = getGlobalId();
-                for (int segmentIndex = 0; segmentIndex < segmentWidthLocal; segmentIndex++) {
-                    averageSegment[segmentIndex] = 0f;
-                }
-
+                float correlationSums = 0f;
                 for (int intervalIndex = 0; intervalIndex < intervalsLength; intervalIndex++) {
-                    int segmentIndex = 0;
-                    for (int traceIndex = froms[intervalIndex]; traceIndex < tos[intervalIndex]; traceIndex++) {
-                        averageSegment[segmentIndex] += voltageLocal[windowIndex + traceIndex] / characterCountLocal;
-                        segmentIndex++;
-                    }
+                    float segmentCorrelation = correlationCoefficientStable(windowIndex + froms[intervalIndex],windowIndex + tos[intervalIndex], windowIndex);
+                    correlationSums += segmentCorrelation;
                 }
 
-                float averageCorrelation = 0f;
-                for (int intervalIndex = 0; intervalIndex < intervalsLength; intervalIndex++) {
-                    float segmentCorrelation = correlationCoefficientStable(windowIndex + froms[intervalIndex],windowIndex + tos[intervalIndex]);
-                    averageCorrelation += segmentCorrelation / characterCountLocal;
-                }
-
-                correlationsForCharacter[windowIndex] = averageCorrelation;
+                correlationsForCharacter[windowIndex] = correlationSums / characterCountLocal;
             }
 
-            private float correlationCoefficientStable(final int intervalFrom, final int intervalTo) {
+            private float correlationCoefficientStable(final int intervalFrom, final int intervalTo, final int windowIndex) {
                 float sumX = 0;
                 float sumY = 0;
                 float sumXY = 0;
                 float squareSumX = 0;
                 float squareSumY = 0;
-                int segmentIndex = 0;
                 for (int intervalIndex = intervalFrom; intervalIndex < intervalTo; intervalIndex++) {
+                    float segmentSum = 0f;
+                    for (int segmentIndex = 0; segmentIndex < intervalsLength; segmentIndex++) {
+                        segmentSum = segmentSum + voltageLocal[froms[segmentIndex] + (intervalIndex - windowIndex)];
+                    }
+
+                    float segmentAverageOnIndex = segmentSum / characterCountLocal;
                     sumX = sumX + voltageLocal[intervalIndex];
-                    sumY = sumY + averageSegment[segmentIndex];
-                    sumXY = sumXY + voltageLocal[intervalIndex] * averageSegment[segmentIndex];
+                    sumY = sumY + segmentAverageOnIndex;
+                    sumXY = sumXY + voltageLocal[intervalIndex] * segmentAverageOnIndex;
                     squareSumX = squareSumX + voltageLocal[intervalIndex] * voltageLocal[intervalIndex];
-                    squareSumY = squareSumY + averageSegment[segmentIndex] * averageSegment[segmentIndex];
-                    segmentIndex++;
+                    squareSumY = squareSumY + segmentAverageOnIndex * segmentAverageOnIndex;
                 }
 
                 float corr = (segmentWidthLocal * sumXY - sumX * sumY) / sqrt(((segmentWidthLocal * squareSumX - sumX * sumX)*(segmentWidthLocal * squareSumY - sumY * sumY))+0.00001f);
