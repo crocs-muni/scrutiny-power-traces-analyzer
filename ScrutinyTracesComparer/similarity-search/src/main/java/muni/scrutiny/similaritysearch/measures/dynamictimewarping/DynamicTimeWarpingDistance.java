@@ -17,6 +17,16 @@ public class DynamicTimeWarpingDistance implements DistanceMeasure {
         return FastDTW.getWarpDistBetween(new TimeSeries(smallerVector), new TimeSeries(biggerVector), 100, new EuclideanDistance());
     }
 
+    @Override
+    public double getWorstSimilarity() {
+        return Double.MAX_VALUE;
+    }
+
+    @Override
+    public boolean isBetterSimilarity(double currentSimilarity, double newSimilarity) {
+        return currentSimilarity > newSimilarity;
+    }
+
     public WarpPath getWarpingPath(double[] smallerVector, double[] biggerVector) {
         return FastDTW.getWarpPathBetween(new TimeSeries(smallerVector), new TimeSeries(biggerVector), 100, new EuclideanDistance());
     }

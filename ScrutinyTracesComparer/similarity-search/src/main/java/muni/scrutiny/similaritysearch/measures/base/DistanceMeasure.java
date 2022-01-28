@@ -7,6 +7,8 @@ package muni.scrutiny.similaritysearch.measures.base;
  * @author Martin
  */
 public interface DistanceMeasure {
-    public double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfBiggerVector);
-    public double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfSmallerVector, int firstIndexOfBiggerVector, int takeN);
+    double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfBiggerVector);
+    double compute(double[] smallerVector, double[] biggerVector, int firstIndexOfSmallerVector, int firstIndexOfBiggerVector, int takeN);
+    double getWorstSimilarity();
+    boolean isBetterSimilarity(double currentSimilarity, double newSimilarity);
 }

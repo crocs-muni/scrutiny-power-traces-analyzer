@@ -79,4 +79,14 @@ public class CrossCorellationDistance implements DistanceMeasure {
 
         return covariance/Math.sqrt(variance1*variance2);
     }
+
+    @Override
+    public double getWorstSimilarity() {
+        return Double.MIN_VALUE;
+    }
+
+    @Override
+    public boolean isBetterSimilarity(double currentSimilarity, double newSimilarity) {
+        return currentSimilarity < newSimilarity;
+    }
 }

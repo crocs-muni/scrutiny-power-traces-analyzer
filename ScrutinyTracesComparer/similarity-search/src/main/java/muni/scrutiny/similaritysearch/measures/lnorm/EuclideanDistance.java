@@ -35,4 +35,14 @@ public class EuclideanDistance implements DistanceMeasure {
 
         return Math.sqrt(sum);
     }
+
+    @Override
+    public double getWorstSimilarity() {
+        return Double.MAX_VALUE;
+    }
+
+    @Override
+    public boolean isBetterSimilarity(double currentSimilarity, double newSimilarity) {
+        return currentSimilarity > newSimilarity;
+    }
 }

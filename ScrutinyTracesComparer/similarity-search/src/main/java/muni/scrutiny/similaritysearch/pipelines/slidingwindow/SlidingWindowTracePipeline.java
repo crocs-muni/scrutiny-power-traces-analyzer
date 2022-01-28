@@ -9,14 +9,11 @@ import muni.scrutiny.similaritysearch.pipelines.base.Similarity;
 import muni.scrutiny.similaritysearch.pipelines.base.TracePipeline;
 import muni.scrutiny.similaritysearch.preprocessing.base.Preprocessor;
 import muni.scrutiny.traces.models.Trace;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.ui.Layer;
 
-import java.awt.*;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public abstract class SlidingWindowTracePipeline extends TracePipeline<ComparisonResult> {
@@ -71,8 +68,9 @@ public abstract class SlidingWindowTracePipeline extends TracePipeline<Compariso
         for (IntervalDistance intervalDistance : distancesIntervals.getIntervalDistances()) {
             double from = biggerTrace.getTimeOnIndex(intervalDistance.getFrom());
             double to = biggerTrace.getTimeOnIndex(intervalDistance.getTo());
+            double colorPowerCoefficient = intervalDistance.getDistance()/distancesIntervals.getMaximalDistance();
             IntervalMarker marker = new IntervalMarker(from, to);
-            marker.setPaint(TracePlotter.getColor(intervalDistance.getDistance()/distancesIntervals.getMaximalDistance()));
+            marker.setPaint(TracePlotter.getColor(intervalDistance.getDistance() / distancesIntervals.getMaximalDistance()));
             marker.setAlpha(0.1f);
             jfc.getXYPlot().addDomainMarker(marker, Layer.BACKGROUND);
         }
@@ -96,10 +94,10 @@ public abstract class SlidingWindowTracePipeline extends TracePipeline<Compariso
     private Similarity findBestSimilarity(double[] biggerVoltageArray, double[] smallerVoltageArray) {
         int windowStart = 0;
         int windowEnd = smallerVoltageArray.length - 1;
-        Similarity bestSimilarity = new Similarity(windowStart, windowEnd, Double.MAX_VALUE);
+        Similarity bestSimilarity = new Similarity(windowStart, windowEnd, distanceMeasure.getWorstSimilarity());
         while (windowEnd < biggerVoltageArray.length) {
             double currentDistance = distanceMeasure.compute(smallerVoltageArray, biggerVoltageArray, windowStart);
-            if (currentDistance < bestSimilarity.getDistance()) {
+            if (distanceMeasure.isBetterSimilarity(bestSimilarity.getDistance(), currentDistance)) {
                 bestSimilarity = new Similarity(windowStart, windowEnd, currentDistance);
             }
 
