@@ -47,7 +47,7 @@ public class GPUCorrelationComputer implements Runnable {
     public void run() {
         int correlationsLength = correlations.get(currentCharacter).length;
         final float[] correlationsForCharacter = new float[correlationsLength];
-        final int intervalsLength = froms.length;
+        final int intervalsLengthLocal = froms.length;
         final float[] voltageLocal = voltage;
         final int[] fromsLocal = froms;
         final int[] tosLocal = tos;
@@ -58,7 +58,7 @@ public class GPUCorrelationComputer implements Runnable {
             public void run() {
                 int windowIndex = getGlobalId();
                 float correlationSums = 0f;
-                for (int intervalIndex = 0; intervalIndex < intervalsLength; intervalIndex++) {
+                for (int intervalIndex = 0; intervalIndex < intervalsLengthLocal; intervalIndex++) {
                     float segmentCorrelation = correlationCoefficientStable(windowIndex + fromsLocal[intervalIndex],windowIndex + tosLocal[intervalIndex], windowIndex);
                     correlationSums += segmentCorrelation;
                 }
@@ -74,8 +74,8 @@ public class GPUCorrelationComputer implements Runnable {
                 float squareSumY = 0;
                 for (int intervalIndex = intervalFrom; intervalIndex < intervalTo; intervalIndex++) {
                     float segmentSum = 0f;
-                    for (int segmentIndex = 0; segmentIndex < intervalsLength; segmentIndex++) {
-                        segmentSum = segmentSum + voltageLocal[froms[segmentIndex] + (intervalIndex - windowIndex)];
+                    for (int segmentIndex = 0; segmentIndex < intervalsLengthLocal; segmentIndex++) {
+                        segmentSum = segmentSum + voltageLocal[fromsLocal[segmentIndex] + (intervalIndex - windowIndex)];
                     }
 
                     float segmentAverageOnIndex = segmentSum / characterCountLocal;
@@ -125,7 +125,7 @@ public class GPUCorrelationComputer implements Runnable {
             System.out.println(device);
             System.out.println();
         }
-        Device d = com.aparapi.device.Device.bestGPU();
+
         Range range = Range.create(endingIndex);
         kernel.execute(range);
 
