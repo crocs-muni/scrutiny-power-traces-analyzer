@@ -345,28 +345,28 @@ public class COTemplateFinderAction extends BaseAction {
 
         return true;
     }
-}
 
-class COTemplateSearchResult {
-    public int timeIteration;
-    public HashMap<Character, List<Pair<Integer, Integer>>> intervalWidths;
-    public HashMap<Character, Integer> characterWidths;
-    public int wholeTemplateSize;
-    public double correlation;
-    public int correlationIndex;
+    class COTemplateSearchResult {
+        public int timeIteration;
+        public HashMap<Character, List<Pair<Integer, Integer>>> intervalWidths;
+        public HashMap<Character, Integer> characterWidths;
+        public int wholeTemplateSize;
+        public double correlation;
+        public int correlationIndex;
 
-    public COTemplateSearchResult(
-            int timeIteration,
-            HashMap<Character, List<Pair<Integer, Integer>>> intervalWidths,
-            HashMap<Character, Integer> characterWidths,
-            int wholeTemplateSize,
-            double correlation,
-            int correlationIndex) {
-        this.timeIteration = timeIteration;
-        this.intervalWidths = intervalWidths;
-        this.characterWidths = characterWidths;
-        this.wholeTemplateSize = wholeTemplateSize;
-        this.correlation = correlation;
-        this.correlationIndex = correlationIndex;
+        public COTemplateSearchResult(
+                int timeIteration,
+                HashMap<Character, List<Pair<Integer, Integer>>> intervalWidths,
+                HashMap<Character, Integer> characterWidths,
+                int wholeTemplateSize,
+                double correlation,
+                int correlationIndex) {
+            this.timeIteration = timeIteration;
+            this.intervalWidths = intervalWidths;
+            this.characterWidths = characterWidths;
+            this.wholeTemplateSize = wholeTemplateSize;
+            this.correlation = correlation;
+            this.correlationIndex = correlationIndex;
+        }
     }
 }

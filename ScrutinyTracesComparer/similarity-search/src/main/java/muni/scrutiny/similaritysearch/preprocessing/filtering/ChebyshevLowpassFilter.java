@@ -1,29 +1,23 @@
 package muni.scrutiny.similaritysearch.preprocessing.filtering;
-import java.util.Optional;
 
 import muni.scrutiny.similaritysearch.preprocessing.base.Preprocessor;
 import muni.scrutiny.traces.models.Trace;
-import uk.me.berndporr.iirj.Butterworth;
+import uk.me.berndporr.iirj.Bessel;
+import uk.me.berndporr.iirj.ChebyshevI;
 
-/**
- * Class that represents low-pass filter.
- * It is used to filter voltage array of the trace.
- *
- * @author Martin Podhora
- */
-public class LowpassFilter implements Preprocessor {
+public class ChebyshevLowpassFilter implements Preprocessor {
     public static final int order = 1;
     public static final double defaultCutoffFrequency = 20000;
     private double cutoffFrequency;
 
-    public LowpassFilter(Double cutoffFrequency) {
+    public ChebyshevLowpassFilter(Double cutoffFrequency) {
         this.cutoffFrequency = cutoffFrequency != null ? cutoffFrequency : defaultCutoffFrequency;
     }
 
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
-        Butterworth butterworth = new Butterworth();
-        butterworth.lowPass(order, traceToPreprocess.getSamplingFrequency(), cutoffFrequency, 5);
+        Bessel butterworth = new Bessel();
+        butterworth.lowPass(order, traceToPreprocess.getSamplingFrequency(), cutoffFrequency);
         double[] voltageArray = traceToPreprocess.getVoltage();
         double firstData = voltageArray[0];
         for (int i = 0; i < voltageArray.length; i++) {

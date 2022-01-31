@@ -107,52 +107,52 @@ public abstract class SlidingWindowTracePipeline extends TracePipeline<Compariso
 
         return bestSimilarity;
     }
-}
 
-class IntervalsDistances {
-    private List<IntervalDistance> intervalDistances = new ArrayList<>();
-    private double maximalDistance = Double.MIN_VALUE;
+    class IntervalsDistances {
+        private List<IntervalDistance> intervalDistances = new ArrayList<>();
+        private double maximalDistance = Double.MIN_VALUE;
 
-    public IntervalsDistances() {
-    }
-
-    public List<IntervalDistance> getIntervalDistances() {
-        return intervalDistances;
-    }
-
-    public double getMaximalDistance() {
-        return maximalDistance;
-    }
-
-    public void addDistance(int from, int to, double distance) {
-        if (distance > maximalDistance) {
-            maximalDistance = distance;
+        public IntervalsDistances() {
         }
 
-        intervalDistances.add(new IntervalDistance(from, to, distance));
-    }
-}
+        public List<IntervalDistance> getIntervalDistances() {
+            return intervalDistances;
+        }
 
-class IntervalDistance {
-    private int from;
-    private int to;
-    private double distance;
+        public double getMaximalDistance() {
+            return maximalDistance;
+        }
 
-    public IntervalDistance(int from, int to, double distance) {
-        this.from = from;
-        this.to = to;
-        this.distance = distance;
-    }
+        public void addDistance(int from, int to, double distance) {
+            if (distance > maximalDistance) {
+                maximalDistance = distance;
+            }
 
-    public int getFrom() {
-        return from;
+            intervalDistances.add(new IntervalDistance(from, to, distance));
+        }
     }
 
-    public int getTo() {
-        return to;
-    }
+    class IntervalDistance {
+        private int from;
+        private int to;
+        private double distance;
 
-    public double getDistance() {
-        return distance;
+        public IntervalDistance(int from, int to, double distance) {
+            this.from = from;
+            this.to = to;
+            this.distance = distance;
+        }
+
+        public int getFrom() {
+            return from;
+        }
+
+        public int getTo() {
+            return to;
+        }
+
+        public double getDistance() {
+            return distance;
+        }
     }
 }

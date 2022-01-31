@@ -28,6 +28,11 @@
             <version>1.3</version>
         </dependency>
         <dependency>
+            <groupId>com.github.lbordowitz.openforecast</groupId>
+            <artifactId>openforecast</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+        <dependency>
             <groupId>muni.scrutiny</groupId>
             <artifactId>traces</artifactId>
             <version>1.0.0</version>
