@@ -5,16 +5,16 @@ import muni.scrutiny.similaritysearch.preprocessing.base.Preprocessor;
 import muni.scrutiny.traces.models.Trace;
 
 public class ExponentialSmoother implements Preprocessor {
-    public static final double defaultAlpha = 1;
-    private double alpha;
+    public static final double defaultsigma = 1;
+    private double sigma;
 
-    public ExponentialSmoother(Double alpha) {
-        this.alpha = alpha != null ? alpha : defaultAlpha;
+    public ExponentialSmoother(Double sigma) {
+        this.sigma = sigma != null ? sigma : defaultsigma;
     }
 
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
-        RecursiveExponentialFilter ref = new RecursiveExponentialFilter(alpha);
+        RecursiveExponentialFilter ref = new RecursiveExponentialFilter(sigma);
         float[] floatVoltageCopy = traceToPreprocess.getFloatVoltageCopy();
         ref.apply(floatVoltageCopy, floatVoltageCopy);
         double[] doubleVoltageCopy = new double[floatVoltageCopy.length];

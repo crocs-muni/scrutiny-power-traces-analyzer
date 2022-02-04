@@ -34,6 +34,7 @@ public class COTemplateFinderAction extends BaseAction {
     private static final String tracePathShort = "-t";
     private static final String configShort = "-c";
     private static final String graphicComputation = "-g";
+    private static final String devicesCountShort = "-d";
 
     private final Map<String, ActionParameter> parameters;
     private final Map<String, ActionFlag> flags;
@@ -46,6 +47,9 @@ public class COTemplateFinderAction extends BaseAction {
             put(configShort, new ActionParameter(new ArrayList<String>() {{
                 add(configShort);
             }}, true, null));
+            put(devicesCountShort, new ActionParameter(new ArrayList<String>() {{
+                add(devicesCountShort);
+            }}, false, "0"));
         }};
         flags = new HashMap<String, ActionFlag>() {{
             put(graphicComputation, new ActionFlag(new ArrayList<String>() {{
@@ -73,6 +77,7 @@ public class COTemplateFinderAction extends BaseAction {
     public void executeAction(String[] arguments) throws ActionException {
         try {
             super.executeAction(arguments);
+            int devicesCount = getParameterAsInt(devicesCountShort);
             Path tracePath = getParameterAsPath(tracePathShort);
             System.out.println("Trace path:");
             System.out.println(tracePath.toAbsolutePath());
@@ -116,7 +121,7 @@ public class COTemplateFinderAction extends BaseAction {
                 for (Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals : maskIntervals.entrySet()) {
                     int characterCount = characterCounts.get(characterIntervals.getKey());
                     int segmentWidth = characterWidths.get(characterIntervals.getKey());
-                    findMostCorrelatedSegment(voltage, endingIndex, correlations, characterIntervals, characterCount, segmentWidth);
+                    findMostCorrelatedSegment(voltage, endingIndex, correlations, characterIntervals, characterCount, segmentWidth, devicesCount);
                 }
 
                 long end = System.currentTimeMillis();
@@ -237,7 +242,8 @@ public class COTemplateFinderAction extends BaseAction {
             HashMap<Character, double[]> correlations,
             Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals,
             int characterCount,
-            int segmentWidth) throws InterruptedException {
+            int segmentWidth,
+            int devicesCount) throws InterruptedException {
         if (flags.get(graphicComputation).getValueOrDefault()) {
             GPUCorrelationComputer gpucc = new GPUCorrelationComputer(
                     voltage,
@@ -245,7 +251,8 @@ public class COTemplateFinderAction extends BaseAction {
                     characterIntervals,
                     characterCount,
                     segmentWidth,
-                    endingIndex);
+                    endingIndex,
+                    devicesCount);
             gpucc.run();
         } else if (endingIndex > 1000) {
             int cores = Runtime.getRuntime().availableProcessors();

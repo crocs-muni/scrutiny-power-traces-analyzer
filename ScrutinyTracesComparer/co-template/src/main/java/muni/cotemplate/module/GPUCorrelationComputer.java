@@ -21,6 +21,7 @@ public class GPUCorrelationComputer implements Runnable {
     private final int characterCount;
     private final int segmentWidth;
     private final int endingIndex;
+    private final int devicesCount;
 
     Character currentCharacter;
 
@@ -33,7 +34,8 @@ public class GPUCorrelationComputer implements Runnable {
             Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals,
             int characterCount,
             int segmentWidth,
-            int endingIndex) {
+            int endingIndex,
+            int devicesCount) {
         this.voltage = getFloatArray(voltage);
         this.correlations = correlations;
         this.characterCount = characterCount;
@@ -42,6 +44,7 @@ public class GPUCorrelationComputer implements Runnable {
         this.froms = getIntArray(characterIntervals, p -> p.getKey());
         this.tos = getIntArray(characterIntervals, p -> p.getValue());
         this.currentCharacter = characterIntervals.getKey();
+        this.devicesCount = devicesCount;
     }
 
     public void run() {
@@ -126,11 +129,20 @@ public class GPUCorrelationComputer implements Runnable {
             System.out.println();
         }
 
-        Range range = Range.create(endingIndex);
-        System.out.println("Max work group size: " + range.getMaxWorkGroupSize());
-        kernel.execute(range);
+//        Device preferredDevice = null;
+//        try {
+//            preferredDevice = preferences.getPreferredDevices(null).get(0);
+//        } catch (Exception _) {
+//        }
 
-        // resulting correlations copy to corr array for character :'(
+        Range range;
+        if (devicesCount > 0) {
+            range = Range.create(endingIndex, devicesCount);
+        } else {
+            range = Range.create(endingIndex);
+        }
+
+        kernel.execute(range);
         double[] doubleCorrelations = correlations.get(currentCharacter);
         for (int i = 0; i < correlationsForCharacter.length; i++) {
             doubleCorrelations[i] = correlationsForCharacter[i];
