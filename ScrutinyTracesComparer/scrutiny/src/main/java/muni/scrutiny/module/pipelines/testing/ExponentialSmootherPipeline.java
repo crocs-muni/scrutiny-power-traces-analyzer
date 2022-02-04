@@ -2,14 +2,14 @@ package muni.scrutiny.module.pipelines.testing;
 
 import muni.scrutiny.similaritysearch.pipelines.base.ComparisonResult;
 import muni.scrutiny.similaritysearch.pipelines.base.TracePipeline;
-import muni.scrutiny.similaritysearch.preprocessing.filtering.ChebyshevLowpassFilter;
+import muni.scrutiny.similaritysearch.preprocessing.filtering.ExponentialSmoother;
 import muni.scrutiny.traces.models.Trace;
 
-public class TraceDFTPipeline extends TracePipeline {
-    public TraceDFTPipeline() {
+public class ExponentialSmootherPipeline extends TracePipeline {
+    public ExponentialSmootherPipeline(Double alpha) {
         super(trace -> {
-            ChebyshevLowpassFilter wf = new ChebyshevLowpassFilter(10000d);
-            return wf.preprocess(trace);
+            ExponentialSmoother es = new ExponentialSmoother(alpha);
+            return es.preprocess(trace);
         });
     }
 
@@ -20,6 +20,6 @@ public class TraceDFTPipeline extends TracePipeline {
 
     @Override
     public String getName() {
-        return "DFT filter";
+        return "Exponential smoother";
     }
 }

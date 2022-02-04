@@ -35,6 +35,10 @@ public class UITracePlotter extends TracePlotter {
 
     public ChartPanel createChartPanel(String name, String xAxisLabel, String yAxisLabel, Dimension panelSize) {
         JFreeChart chart = createXYLineChart(name, xAxisLabel, yAxisLabel);
+        return createChartPanel(chart, panelSize);
+    }
+
+    public ChartPanel createChartPanel(JFreeChart chart, Dimension panelSize) {
         ChartPanel panel = new ChartPanel(chart);
         panel.setPreferredSize(panelSize);
         return panel;

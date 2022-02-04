@@ -26,7 +26,7 @@ public class SimpleRescaler implements Preprocessor {
 
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
-        double[] voltageArray = traceToPreprocess.getVoltage();
+        double[] voltageArray = traceToPreprocess.getVoltageCopy();
 
         if (scale != null) {
             for (int i = 0; i < voltageArray.length; i++) {

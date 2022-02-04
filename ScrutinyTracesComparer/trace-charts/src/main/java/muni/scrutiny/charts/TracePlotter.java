@@ -5,6 +5,7 @@ import muni.scrutiny.traces.models.Trace;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.DatasetRenderingOrder;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.DefaultXYItemRenderer;
@@ -14,6 +15,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TracePlotter {
@@ -30,6 +32,8 @@ public class TracePlotter {
 
     public static final Color RED = new Color(219,68,55);
     public static final Color GREEN = new Color(15, 157, 88);
+    public static final Color LIGHT_GREEN = new Color(127, 255, 148);
+    public static final Color GRAY = new Color(211, 211, 211);
     public static final Color BLUE = new Color(66, 133, 244);
     public static final Color YELLOW = new Color(244, 180, 0);
     public static final Color ORANGE = new Color(255, 165, 0);
@@ -51,17 +55,20 @@ public class TracePlotter {
     }
 
     public TracePlotter(List<ChartTrace> traces) {
+        Collections.sort(traces, (ct1, ct2) -> Integer.compare(ct1.getOrder(), ct2.getOrder()));
         this.traces = traces;
         this.additionalSeries = new ArrayList<>();
     }
 
     public TracePlotter(List<ChartTrace> traces, List<XYSeries> additionalSeries) {
+        Collections.sort(traces, (ct1, ct2) -> Integer.compare(ct1.getOrder(), ct2.getOrder()));
         this.traces = traces;
         this.additionalSeries = additionalSeries;
     }
 
     public JFreeChart assignSeriesToChart(JFreeChart chart) {
         XYPlot xyPlot = chart.getXYPlot();
+        xyPlot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
         int index = 0;
 
         for (ChartTrace trace : traces) {
@@ -126,7 +133,7 @@ public class TracePlotter {
 
     private static XYSeries createXYSeries(ChartTrace trace) {
         Trace t = trace.getTrace();
-        XYSeries xySeries = new XYSeries(t.getName(), false, true);
+        XYSeries xySeries = new XYSeries(trace.getDisplayName() == null ? t.getDisplayName() : trace.getDisplayName(), false, true);
         xySeries.setMaximumItemCount(t.getDataCount());
         double[] voltage = t.getVoltage();
         double[] time = t.getTime(false, trace.getIndexOffset());

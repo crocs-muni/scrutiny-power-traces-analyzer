@@ -6,8 +6,8 @@ import muni.scrutiny.similaritysearch.preprocessing.resampling.TraceIntervalResa
 import muni.scrutiny.similaritysearch.preprocessing.resampling.intervalprocessor.MeanProcessor;
 import muni.scrutiny.traces.models.Trace;
 
-public class TraceResamplingPipeline extends TracePipeline {
-    public TraceResamplingPipeline(int desiredSamplingFrequency, int intervalRadius) {
+public class ResamplingPipeline extends TracePipeline {
+    public ResamplingPipeline(int desiredSamplingFrequency, int intervalRadius) {
         super(trace -> {
             TraceIntervalResampler tir = new TraceIntervalResampler(
                     desiredSamplingFrequency,

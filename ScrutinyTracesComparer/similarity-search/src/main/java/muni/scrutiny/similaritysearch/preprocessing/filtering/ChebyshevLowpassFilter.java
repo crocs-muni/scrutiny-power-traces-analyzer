@@ -7,7 +7,7 @@ import uk.me.berndporr.iirj.ChebyshevI;
 
 public class ChebyshevLowpassFilter implements Preprocessor {
     public static final int order = 1;
-    public static final double defaultCutoffFrequency = 20000;
+    public static final double defaultCutoffFrequency = 10000;
     private double cutoffFrequency;
 
     public ChebyshevLowpassFilter(Double cutoffFrequency) {
@@ -16,12 +16,12 @@ public class ChebyshevLowpassFilter implements Preprocessor {
 
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
-        Bessel butterworth = new Bessel();
-        butterworth.lowPass(order, traceToPreprocess.getSamplingFrequency(), cutoffFrequency);
-        double[] voltageArray = traceToPreprocess.getVoltage();
+        ChebyshevI chebyshevI = new ChebyshevI();
+        chebyshevI.lowPass(order, traceToPreprocess.getSamplingFrequency(), cutoffFrequency, 1);
+        double[] voltageArray = traceToPreprocess.getVoltageCopy();
         double firstData = voltageArray[0];
         for (int i = 0; i < voltageArray.length; i++) {
-            voltageArray[i] = butterworth.filter(voltageArray[i] - firstData) + firstData;
+            voltageArray[i] = chebyshevI.filter(voltageArray[i] - firstData) + firstData;
         }
 
         return new Trace(

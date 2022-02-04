@@ -10,6 +10,8 @@ public class ChartTrace {
     private final Color color;
     private final Stroke stroke;
     private final int indexOffset;
+    private String displayName;
+    private int order;
 
     public ChartTrace(Trace trace, Color color) {
         this.trace = trace;
@@ -39,7 +41,6 @@ public class ChartTrace {
         this.stroke = stroke;
     }
 
-
     public Trace getTrace() {
         return this.trace;
     }
@@ -53,4 +54,12 @@ public class ChartTrace {
     }
 
     public Stroke getStroke() { return this.stroke; }
+
+    public String getDisplayName() { return displayName; }
+
+    public int getOrder() { return order; }
+
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
+
+    public void setOrder(int order) { this.order = order; }
 }

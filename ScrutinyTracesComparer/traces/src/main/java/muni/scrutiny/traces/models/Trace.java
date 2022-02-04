@@ -1,9 +1,11 @@
 package muni.scrutiny.traces.models;
 
 import muni.scrutiny.traces.helpers.UnitsHelper;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
 
 /**
  * This class represents trace consisting of time and voltage.
@@ -121,6 +123,18 @@ public class Trace {
 
     public double[] getVoltage() {
         return voltageArray;
+    }
+
+    public float[] getFloatVoltageCopy() {
+        float[] floatVoltage = new float[voltageArray.length];
+        for (int i = 0; i < voltageArray.length; i++) {
+            floatVoltage[i] = (float)voltageArray[i];
+        }
+        return floatVoltage;
+    }
+
+    public double[] getVoltageCopy() {
+        return Arrays.copyOf(voltageArray, voltageArray.length);
     }
 
     public String getName() { return name; }

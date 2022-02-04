@@ -26,7 +26,7 @@ public class SimpleOffsetNormalizer implements Preprocessor {
 
     @Override
     public Trace preprocess(Trace traceToPreprocess) {
-        double[] voltageArray = traceToPreprocess.getVoltage();
+        double[] voltageArray = traceToPreprocess.getVoltageCopy();
 
         if (offset != null) {
             for (int i = 0; i < voltageArray.length; i++) {

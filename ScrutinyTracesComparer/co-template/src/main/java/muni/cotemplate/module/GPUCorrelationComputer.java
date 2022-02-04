@@ -127,6 +127,7 @@ public class GPUCorrelationComputer implements Runnable {
         }
 
         Range range = Range.create(endingIndex);
+        System.out.println("Max work group size: " + range.getMaxWorkGroupSize());
         kernel.execute(range);
 
         // resulting correlations copy to corr array for character :'(

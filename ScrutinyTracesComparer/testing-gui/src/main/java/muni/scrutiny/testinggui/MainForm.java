@@ -1,13 +1,14 @@
 package muni.scrutiny.testinggui;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
+import com.google.gson.Gson;
+import muni.scrutiny.charts.TracePlotter;
 import muni.scrutiny.charts.models.Boundary;
-import muni.scrutiny.module.pipelines.testing.TraceDFTPipeline;
-import muni.scrutiny.module.pipelines.testing.TraceResamplingPipeline;
+import muni.scrutiny.charts.models.ChartTrace;
+import muni.scrutiny.module.pipelines.testing.*;
 import muni.scrutiny.similaritysearch.pipelines.base.PreprocessingResult;
 import muni.scrutiny.similaritysearch.pipelines.base.TracePipeline;
+import muni.scrutiny.similaritysearch.preprocessing.filtering.ChebyshevLowpassFilter;
+import muni.scrutiny.similaritysearch.preprocessing.filtering.ExponentialSmoother;
 import muni.scrutiny.testinggui.chartprocessing.HightlightingChartMouseListener;
 import muni.scrutiny.testinggui.chartprocessing.UITracePlotter;
 import muni.scrutiny.testinggui.models.ExtractionTabModel;
@@ -18,12 +19,13 @@ import muni.scrutiny.traces.loader.DataLoader;
 import muni.scrutiny.traces.models.Trace;
 import muni.scrutiny.traces.saver.DataSaver;
 import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.title.TextTitle;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
-import javax.swing.plaf.FontUIResource;
-import javax.swing.text.StyleContext;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -31,7 +33,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class MainForm {
     private JPanel mainPanel;
@@ -52,8 +53,8 @@ public class MainForm {
     private JTextField preprocessTraceTextField;
     private JComboBox pipelinesComboBox;
     private JButton executeButton;
-    private JPanel beforeChartPanel;
-    private JPanel afterChartPanel;
+    private JPanel visualizationChartPanel;
+    private JTextField customDataJson;
 
     private final MainFormModel mainFormModel = new MainFormModel();
 
@@ -113,8 +114,32 @@ public class MainForm {
 
     private void initVisualizationTab() {
         pipelinesComboBox.addItem(new ComboItemModel("-", ""));
-        pipelinesComboBox.addItem(new ComboItemModel("Resampling Pipeline", "TraceResamplingPipeline"));
-        pipelinesComboBox.addItem(new ComboItemModel("DFT Pipeline", "TraceDFTPipeline"));
+        pipelinesComboBox.addItem(new ComboItemModel("Resampling Pipeline", ResamplingPipeline.class.getName()));
+        pipelinesComboBox.addItem(new ComboItemModel("Butterworth Pipeline", ButterworthFilterPipeline.class.getName()));
+        pipelinesComboBox.addItem(new ComboItemModel("Chebyshev Pipeline", ChebyshevFilterPipeline.class.getName()));
+        pipelinesComboBox.addItem(new ComboItemModel("Bessel Pipeline", BesselFilterPipeline.class.getName()));
+        pipelinesComboBox.addItem(new ComboItemModel("Butterworth and Chebyshev Pipeline", "ButterworthAndChebyshevFilterPipeline"));
+        pipelinesComboBox.addItem(new ComboItemModel("Exponential smoother Pipeline", ExponentialSmootherPipeline.class.getName()));
+        pipelinesComboBox.addActionListener (new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String value = ((ComboItemModel) pipelinesComboBox.getSelectedItem()).getValue();
+                if (ResamplingPipeline.class.getName().contains(value)) {
+                    customDataJson.setText("{\"sampling_frequency\":1000000, \"radius\":10}");
+                } else if (ButterworthFilterPipeline.class.getName().contains(value)) {
+                    customDataJson.setText("{\"cutoff_frequency\":10000}");
+                } else if (ChebyshevFilterPipeline.class.getName().contains(value)) {
+                    customDataJson.setText("{\"cutoff_frequency\":10000}");
+                } else if (value.contains("ButterworthAndChebyshevFilterPipeline")) {
+                    customDataJson.setText("{\"cutoff_frequency\":10000}");
+                } else if (BesselFilterPipeline.class.getName().contains(value)) {
+                    customDataJson.setText("{\"cutoff_frequency\":10000}");
+                } else if (ExponentialSmootherPipeline.class.getName().contains(value)) {
+                    customDataJson.setText("{\"alpha\":1}");
+                } else {
+                    customDataJson.setText("");
+                }
+            }
+        });
         executeButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -180,6 +205,7 @@ public class MainForm {
     }
 
     private void executeProcessing() {
+        visualizationChartPanel.removeAll();
         ComboItemModel comboItemModel = (ComboItemModel) pipelinesComboBox.getSelectedItem();
         if (comboItemModel == null || comboItemModel.getValue() == null || comboItemModel.getValue().equals("")) {
             JOptionPane.showMessageDialog(mainPanel, "No operation was selected");
@@ -188,27 +214,57 @@ public class MainForm {
                 // Load and show trace
                 Path path = Paths.get(preprocessTraceTextField.getText());
                 Trace trace = DataLoader.importFromCsv(path, DataManager.DEFAULT_TIME_COLUMN, DataManager.DEFAULT_VOLTAGE_COLUMN, false);
-                beforeChartPanel.removeAll();
-                afterChartPanel.removeAll();
-                UITracePlotter uiTracePlotter1 = new UITracePlotter(trace);
-                Dimension panelSize = new Dimension(beforeChartPanel.getWidth(), beforeChartPanel.getHeight());
-                ChartPanel jfreeChartPanel1 = uiTracePlotter1.createChartPanel("Traces chart - " + trace.getSamplingFrequency(), "Time", "Voltage", panelSize);
-                beforeChartPanel.add(jfreeChartPanel1, BorderLayout.CENTER);
-                beforeChartPanel.validate();
-
-                // Preprocess and show trace
                 TracePipeline trp = null;
-                if (TraceResamplingPipeline.class.getName().contains(comboItemModel.getValue())) {
-                    trp = new TraceResamplingPipeline((int) (trace.getSamplingFrequency() * 5), 1);
-                } else if (TraceDFTPipeline.class.getName().contains(comboItemModel.getValue())) {
-                    trp = new TraceDFTPipeline();
+                String subtitleMessage = "";
+                List<ChartTrace> chartTraces = new ArrayList<>();
+
+                if (ResamplingPipeline.class.getName().contains(comboItemModel.getValue())) {
+                    ResamplingPipelineJson rpj = (new Gson()).fromJson(customDataJson.getText(), ResamplingPipelineJson.class);
+                    trp = new ResamplingPipeline(rpj.sampingFrequency, rpj.intervalRadius);
+                    subtitleMessage = "Resampling from sampling frequency " + trace.getSamplingFrequency() + " to " + rpj.sampingFrequency;
+                } else if (ButterworthFilterPipeline.class.getName().contains(comboItemModel.getValue())) {
+                    ButterworthFilterPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ButterworthFilterPipelineJson.class);
+                    trp = new ButterworthFilterPipeline(bfpj.cutoffFrequency);
+                    subtitleMessage = "Filtering with cutoff frequency " + bfpj.cutoffFrequency;
+                } else if (ChebyshevFilterPipeline.class.getName().contains(comboItemModel.getValue())) {
+                    ButterworthFilterPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ButterworthFilterPipelineJson.class);
+                    trp = new ChebyshevFilterPipeline(bfpj.cutoffFrequency);
+                    subtitleMessage = "Filtering with cutoff frequency " + bfpj.cutoffFrequency;
+                } else if (BesselFilterPipeline.class.getName().contains(comboItemModel.getValue())) {
+                    ButterworthFilterPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ButterworthFilterPipelineJson.class);
+                    trp = new BesselFilterPipeline(bfpj.cutoffFrequency);
+                    subtitleMessage = "Filtering with cutoff frequency " + bfpj.cutoffFrequency;
+                } else if (comboItemModel.getValue().contains("ButterworthAndChebyshevFilterPipeline")) {
+                    ButterworthFilterPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ButterworthFilterPipelineJson.class);
+                    trp = new ChebyshevFilterPipeline(bfpj.cutoffFrequency);
+                    ChartTrace ctAdd = new ChartTrace(new ButterworthFilterPipeline(bfpj.cutoffFrequency).preprocess(trace).getPreprocessedTrace(), TracePlotter.GRAY, new BasicStroke(0.5f));
+                    ctAdd.setDisplayName(trace.getDisplayName() + "-butterworth");
+                    ctAdd.setOrder(30);
+                    chartTraces.add(ctAdd);
+                    subtitleMessage = "Filtering with cutoff frequency " + bfpj.cutoffFrequency;
+                } else if (ExponentialSmootherPipeline.class.getName().contains(comboItemModel.getValue())) {
+                    ExponentialSmootherPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ExponentialSmootherPipelineJson.class);
+                    trp = new ExponentialSmootherPipeline(bfpj.alpha);
+                    subtitleMessage = "Smoothing with alpha " + bfpj.alpha;
                 }
 
                 PreprocessingResult pr = trp.preprocess(trace);
-                UITracePlotter uiTracePlotter2 = new UITracePlotter(pr.getPreprocessedTrace());
-                ChartPanel jfreeChartPanel2 = uiTracePlotter2.createChartPanel("Traces chart - " + pr.getPreprocessedTrace().getSamplingFrequency(), "Time", "Voltage", panelSize);
-                afterChartPanel.add(jfreeChartPanel2, BorderLayout.CENTER);
-                afterChartPanel.validate();
+                ChartTrace ctBefore = new ChartTrace(trace, TracePlotter.BLUE, new BasicStroke(1f));
+                ChartTrace ctAfter = new ChartTrace(pr.getPreprocessedTrace(), TracePlotter.ORANGE, new BasicStroke(2f));
+                ctBefore.setDisplayName(trace.getDisplayName() + "-before");
+                ctBefore.setOrder(10);
+                ctAfter.setDisplayName(trace.getDisplayName() + "-after");
+                ctAfter.setOrder(20);
+                chartTraces.add(ctBefore);
+                chartTraces.add(ctAfter);
+                UITracePlotter uiTracePlotter = new UITracePlotter(chartTraces);
+
+                Dimension panelSize = new Dimension(visualizationChartPanel.getWidth(), visualizationChartPanel.getHeight());
+                JFreeChart jfc = uiTracePlotter.createXYLineChart(trace.getDisplayName() + " " + comboItemModel.getKey(), trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
+                jfc.addSubtitle(new TextTitle(subtitleMessage));
+                ChartPanel cp = uiTracePlotter.createChartPanel(jfc, panelSize);
+                visualizationChartPanel.add(cp, BorderLayout.CENTER);
+                visualizationChartPanel.validate();
             } catch (IOException exception) {
                 JOptionPane.showMessageDialog(mainPanel, "Could not load trace");
             }
