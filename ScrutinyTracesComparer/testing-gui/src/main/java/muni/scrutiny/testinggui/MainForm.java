@@ -7,8 +7,6 @@ import muni.scrutiny.charts.models.ChartTrace;
 import muni.scrutiny.module.pipelines.testing.*;
 import muni.scrutiny.similaritysearch.pipelines.base.PreprocessingResult;
 import muni.scrutiny.similaritysearch.pipelines.base.TracePipeline;
-import muni.scrutiny.similaritysearch.preprocessing.filtering.ChebyshevLowpassFilter;
-import muni.scrutiny.similaritysearch.preprocessing.filtering.ExponentialSmoother;
 import muni.scrutiny.testinggui.chartprocessing.HightlightingChartMouseListener;
 import muni.scrutiny.testinggui.chartprocessing.UITracePlotter;
 import muni.scrutiny.testinggui.models.ExtractionTabModel;
@@ -134,7 +132,7 @@ public class MainForm {
                 } else if (BesselFilterPipeline.class.getName().contains(value)) {
                     customDataJson.setText("{\"cutoff_frequency\":10000}");
                 } else if (ExponentialSmootherPipeline.class.getName().contains(value)) {
-                    customDataJson.setText("{\"alpha\":1}");
+                    customDataJson.setText("{\"sigma\":1}");
                 } else {
                     customDataJson.setText("");
                 }
@@ -244,8 +242,8 @@ public class MainForm {
                     subtitleMessage = "Filtering with cutoff frequency " + bfpj.cutoffFrequency;
                 } else if (ExponentialSmootherPipeline.class.getName().contains(comboItemModel.getValue())) {
                     ExponentialSmootherPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ExponentialSmootherPipelineJson.class);
-                    trp = new ExponentialSmootherPipeline(bfpj.alpha);
-                    subtitleMessage = "Smoothing with alpha " + bfpj.alpha;
+                    trp = new ExponentialSmootherPipeline(bfpj.sigma);
+                    subtitleMessage = "Smoothing with alpha " + bfpj.sigma;
                 }
 
                 PreprocessingResult pr = trp.preprocess(trace);

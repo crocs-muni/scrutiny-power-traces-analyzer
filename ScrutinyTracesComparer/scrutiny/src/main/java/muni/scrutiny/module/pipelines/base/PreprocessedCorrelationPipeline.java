@@ -1,14 +1,15 @@
 package muni.scrutiny.module.pipelines.base;
 
-import muni.scrutiny.similaritysearch.measures.crosscorellation.CrossCorellationDistance;
-import muni.scrutiny.similaritysearch.pipelines.slidingwindow.SlidingWindowTracePipeline;
+import muni.scrutiny.similaritysearch.measures.samplecrosscorellation.SampleCrossCorellationDistance;
+import muni.scrutiny.similaritysearch.pipelines.base.CorrelationSlidingWindowTracePipeline;
+import muni.scrutiny.similaritysearch.pipelines.base.SlidingWindowTracePipeline;
 import muni.scrutiny.similaritysearch.preprocessing.filtering.ButterworthLowpassFilter;
 import muni.scrutiny.similaritysearch.preprocessing.offsetting.SimpleOffsetNormalizer;
 import muni.scrutiny.similaritysearch.preprocessing.resampling.TraceIntervalResampler;
 import muni.scrutiny.similaritysearch.preprocessing.resampling.intervalprocessor.MeanProcessor;
 import muni.scrutiny.similaritysearch.preprocessing.rescaling.SimpleRescaler;
 
-public class PreprocessedCorrelationPipeline extends SlidingWindowTracePipeline {
+public class PreprocessedCorrelationPipeline extends CorrelationSlidingWindowTracePipeline {
     public static final String name = "pcp";
 
     public PreprocessedCorrelationPipeline(
@@ -16,7 +17,7 @@ public class PreprocessedCorrelationPipeline extends SlidingWindowTracePipeline 
             double referenceMinimum,
             double referenceMaximum,
             CustomPipelineParameters customParameters) {
-        super(new CrossCorellationDistance(),
+        super(new SampleCrossCorellationDistance(),
                 new TraceIntervalResampler(desiredSamplingFrequency, new MeanProcessor(), 1),
                 new ButterworthLowpassFilter(customParameters == null ? null :customParameters.getDoubleParameter("cutoffFrequency")),
                 new SimpleOffsetNormalizer(referenceMinimum, referenceMaximum, customParameters == null ? null : customParameters.getDoubleParameter("offset"), customParameters == null ? null : customParameters.getDoubleParameter("normalizerInvervalCoefficient")),

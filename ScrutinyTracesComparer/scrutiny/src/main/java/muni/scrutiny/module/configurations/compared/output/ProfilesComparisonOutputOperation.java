@@ -1,6 +1,7 @@
 package muni.scrutiny.module.configurations.compared.output;
 
 import com.google.gson.annotations.SerializedName;
+import muni.scrutiny.module.configurations.reference.output.CreateReferenceProfileOutputOperationExecTime;
 
 import java.util.List;
 
@@ -22,8 +23,14 @@ public class ProfilesComparisonOutputOperation {
     @SerializedName("operation_code")
     public String operationCode;
 
+    @SerializedName("pipeline_code")
+    public String pipelineCode;
+
     @SerializedName("comparison_results")
     public List<Double> comparisonResults;
+
+    @SerializedName("execution_times")
+    public List<CreateReferenceProfileOutputOperationExecTime> executionTimes;
 
     @SerializedName("charts")
     public List<String> charts;

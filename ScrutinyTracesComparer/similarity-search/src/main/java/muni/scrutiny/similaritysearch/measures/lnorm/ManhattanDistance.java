@@ -1,13 +1,13 @@
 package muni.scrutiny.similaritysearch.measures.lnorm;
 
-import muni.scrutiny.similaritysearch.measures.base.DistanceMeasure;
+import muni.scrutiny.similaritysearch.measures.base.SimilarityMeasure;
 
 /**
  * Class for Manhattan metric function.
  * 
  * @author Martin
  */
-public class ManhattanDistance implements DistanceMeasure {
+public class ManhattanDistance implements SimilarityMeasure {
     public ManhattanDistance() {
     }
 
@@ -32,15 +32,5 @@ public class ManhattanDistance implements DistanceMeasure {
             sum += Math.abs(smallerVector[i] - biggerVector[firstIndexOfBiggerVector + i]);
         }
         return sum;
-    }
-
-    @Override
-    public double getWorstSimilarity() {
-        return Double.MAX_VALUE;
-    }
-
-    @Override
-    public boolean isBetterSimilarity(double currentSimilarity, double newSimilarity) {
-        return currentSimilarity > newSimilarity;
     }
 }

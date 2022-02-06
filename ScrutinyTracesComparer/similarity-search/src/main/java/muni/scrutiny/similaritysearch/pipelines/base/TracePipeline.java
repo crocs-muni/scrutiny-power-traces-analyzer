@@ -4,7 +4,7 @@ import muni.scrutiny.similaritysearch.preprocessing.base.Preprocessor;
 import muni.scrutiny.traces.models.Trace;
 
 public abstract class TracePipeline<TComparisonResult extends ComparisonResult> implements ComparisonPipeline<PreprocessingResult, TComparisonResult> {
-    public final Preprocessor[] preprocessors;
+    protected final Preprocessor[] preprocessors;
 
     public TracePipeline(Preprocessor... preprocessors) {
         this.preprocessors = preprocessors;

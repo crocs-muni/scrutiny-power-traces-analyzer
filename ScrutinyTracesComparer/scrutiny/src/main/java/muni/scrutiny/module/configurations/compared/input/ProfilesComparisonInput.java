@@ -5,6 +5,6 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 public class ProfilesComparisonInput {
-    @SerializedName("traces")
-    public List<ProfilesComparisonInputOperation> traces;
+    @SerializedName("operations")
+    public List<ProfilesComparisonInputOperation> operations;
 }

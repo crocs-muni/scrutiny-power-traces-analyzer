@@ -1,14 +1,15 @@
 package muni.scrutiny.module.pipelines.base;
 
 import muni.scrutiny.similaritysearch.measures.lnorm.EuclideanDistance;
-import muni.scrutiny.similaritysearch.pipelines.slidingwindow.SlidingWindowTracePipeline;
+import muni.scrutiny.similaritysearch.pipelines.base.DistanceSlidingWindowTracePipeline;
+import muni.scrutiny.similaritysearch.pipelines.base.SlidingWindowTracePipeline;
 import muni.scrutiny.similaritysearch.preprocessing.filtering.ButterworthLowpassFilter;
 import muni.scrutiny.similaritysearch.preprocessing.offsetting.SimpleOffsetNormalizer;
 import muni.scrutiny.similaritysearch.preprocessing.resampling.TraceIntervalResampler;
 import muni.scrutiny.similaritysearch.preprocessing.resampling.intervalprocessor.MeanProcessor;
 import muni.scrutiny.similaritysearch.preprocessing.rescaling.SimpleRescaler;
 
-public class PreprocessedEuclideanPipeline extends SlidingWindowTracePipeline {
+public class PreprocessedEuclideanPipeline extends DistanceSlidingWindowTracePipeline {
     public static final String name = "pep";
 
     public PreprocessedEuclideanPipeline(

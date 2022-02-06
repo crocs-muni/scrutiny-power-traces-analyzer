@@ -86,18 +86,6 @@
         </dependency>
         <dependency>
             <groupId>muni.scrutiny</groupId>
-            <artifactId>trace-charts</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>muni.scrutiny</groupId>
-            <artifactId>co-template</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>muni.scrutiny</groupId>
             <artifactId>co-template</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>

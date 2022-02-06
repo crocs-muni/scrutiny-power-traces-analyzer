@@ -1,13 +1,13 @@
 package muni.scrutiny.similaritysearch.measures.lnorm;
 
-import muni.scrutiny.similaritysearch.measures.base.DistanceMeasure;
+import muni.scrutiny.similaritysearch.measures.base.SimilarityMeasure;
 
 /**
  * Class for Euclidean metric function.
  * 
  * @author Martin
  */
-public class EuclideanDistance implements DistanceMeasure {
+public class EuclideanDistance implements SimilarityMeasure {
     public EuclideanDistance() {
     }
 
@@ -17,6 +17,7 @@ public class EuclideanDistance implements DistanceMeasure {
         for (int i = 0; i < smallerVector.length; i++) {
             sum += (smallerVector[i] - biggerVector[firstIndexOfBiggerVector + i]) * (smallerVector[i] - biggerVector[firstIndexOfBiggerVector + i]);
         }
+
         return Math.sqrt(sum);
     }
 
@@ -34,15 +35,5 @@ public class EuclideanDistance implements DistanceMeasure {
         }
 
         return Math.sqrt(sum);
-    }
-
-    @Override
-    public double getWorstSimilarity() {
-        return Double.MAX_VALUE;
-    }
-
-    @Override
-    public boolean isBetterSimilarity(double currentSimilarity, double newSimilarity) {
-        return currentSimilarity > newSimilarity;
     }
 }

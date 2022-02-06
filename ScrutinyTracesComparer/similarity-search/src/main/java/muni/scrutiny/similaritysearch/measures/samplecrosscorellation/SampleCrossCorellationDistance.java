@@ -1,12 +1,12 @@
-package muni.scrutiny.similaritysearch.measures.crosscorellation;
+package muni.scrutiny.similaritysearch.measures.samplecrosscorellation;
 
-import muni.scrutiny.similaritysearch.measures.base.DistanceMeasure;
+import muni.scrutiny.similaritysearch.measures.base.SimilarityMeasure;
 
 /**
  * https://www.sciencedirect.com/topics/earth-and-planetary-sciences/cross-correlation
  */
-public class CrossCorellationDistance implements DistanceMeasure {
-    public CrossCorellationDistance() {
+public class SampleCrossCorellationDistance implements SimilarityMeasure {
+    public SampleCrossCorellationDistance() {
     }
 
     @Override
@@ -78,15 +78,5 @@ public class CrossCorellationDistance implements DistanceMeasure {
         }
 
         return covariance/Math.sqrt(variance1*variance2);
-    }
-
-    @Override
-    public double getWorstSimilarity() {
-        return Double.MIN_VALUE;
-    }
-
-    @Override
-    public boolean isBetterSimilarity(double currentSimilarity, double newSimilarity) {
-        return currentSimilarity < newSimilarity;
     }
 }
