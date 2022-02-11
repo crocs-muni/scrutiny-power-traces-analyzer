@@ -53,7 +53,6 @@
         </dependency>
     </dependencies>
 
-    <groupId>muni.scrutiny</groupId>
     <artifactId>similarity-search</artifactId>
     <version>1.0.0</version>
 </project>

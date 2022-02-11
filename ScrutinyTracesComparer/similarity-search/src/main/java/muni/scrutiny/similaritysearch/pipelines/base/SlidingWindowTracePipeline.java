@@ -52,7 +52,7 @@ public abstract class SlidingWindowTracePipeline extends TracePipeline<Compariso
             chartTraces.add(new ChartTrace(referencePreprocessedTrace, TracePlotter.BLUE, TracePlotter.basicChartStroke));
             chartTraces.add(new ChartTrace(newPreprocessedTrace, TracePlotter.ORANGE, bestSimilarity.getFirstIndex()));
         } else {
-            chartTraces.add(new ChartTrace(referencePreprocessedTrace, TracePlotter.BLUE, bestSimilarity.getFirstIndex(), TracePlotter.basicDashedStroke));
+            chartTraces.add(new ChartTrace(referencePreprocessedTrace, TracePlotter.BLUE, bestSimilarity.getFirstIndex()));
             chartTraces.add(new ChartTrace(newPreprocessedTrace, TracePlotter.ORANGE));
         }
 

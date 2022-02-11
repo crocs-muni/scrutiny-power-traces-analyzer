@@ -5,16 +5,16 @@ import com.google.gson.annotations.SerializedName;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ScrutinyModules {
+public class TracesComparerDevice {
     @SerializedName("py/object")
-    public String pyObject = "scrutiny.device.Device";
+    public String pyObject = "scrutiny.javacard.modules.tracescomparer.TraceComparerDevice";
 
     @SerializedName("device_type")
-    public String deviceType = "No device";
+    public String deviceType = "";
 
     @SerializedName("name")
-    public String name = "Traces comparer SCRUTINY modules";
+    public String name = "TRACES_COMPARER";
 
     @SerializedName("modules")
-    public Map<String, ScrutinyModule> modules = new HashMap<>();
+    public Map<String, TracesComparerModule> modules = new HashMap<>();
 }

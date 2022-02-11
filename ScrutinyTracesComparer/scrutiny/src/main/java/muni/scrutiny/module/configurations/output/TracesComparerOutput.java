@@ -1,4 +1,4 @@
-package muni.scrutiny.module.configurations.reference.input;
+package muni.scrutiny.module.configurations.output;
 
 import com.google.gson.annotations.SerializedName;
 import muni.scrutiny.module.pipelines.base.CustomPipelineParameters;
@@ -6,18 +6,21 @@ import muni.scrutiny.module.pipelines.base.CustomPipelineParameters;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class CreateReferenceProfileInput {
+public class TracesComparerOutput {
+    @SerializedName("py/object")
+    public String pyObject = "scrutiny.javacard.modules.tracescomparer.TracesComparerOutput";
+
     @SerializedName("card_code")
     public String cardCode;
-
-    @SerializedName("pipelines")
-    public List<String> pipelines;
 
     @SerializedName("custom_parameters")
     public CustomPipelineParameters customParameters;
 
-    @SerializedName("operations")
-    public List<CreateReferenceProfileInputOperation> operations;
+    @SerializedName("results")
+    public List<TCOOperation> results;
+
+    @SerializedName("created_date")
+    public LocalDateTime createdDate;
 
     @SerializedName("created_by")
     public String createdBy;

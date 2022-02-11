@@ -9,7 +9,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>muni.scrutiny</groupId>
     <artifactId>console-app</artifactId>
     <version>1.0.0</version>
 

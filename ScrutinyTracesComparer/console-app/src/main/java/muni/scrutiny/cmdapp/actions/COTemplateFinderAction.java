@@ -353,7 +353,7 @@ public class COTemplateFinderAction extends BaseAction {
         return true;
     }
 
-    class COTemplateSearchResult {
+    static class COTemplateSearchResult {
         public int timeIteration;
         public HashMap<Character, List<Pair<Integer, Integer>>> intervalWidths;
         public HashMap<Character, Integer> characterWidths;
