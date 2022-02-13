@@ -22,4 +22,9 @@ public class BesselFilterPipeline extends TracePipeline {
     public String getName() {
         return "Chebyshev filter";
     }
+
+    @Override
+    public String getMetricType() {
+        return null;
+    }
 }

@@ -28,4 +28,7 @@ public class PreprocessedEuclideanPipeline extends DistanceSlidingWindowTracePip
     public String getName() {
         return name;
     }
+
+    @Override
+    public String getMetricType() { return "distance"; }
 }

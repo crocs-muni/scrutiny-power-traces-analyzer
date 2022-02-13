@@ -22,4 +22,9 @@ public class ButterworthFilterPipeline extends TracePipeline {
     public String getName() {
         return "Butterworth filter";
     }
+
+    @Override
+    public String getMetricType() {
+        return null;
+    }
 }

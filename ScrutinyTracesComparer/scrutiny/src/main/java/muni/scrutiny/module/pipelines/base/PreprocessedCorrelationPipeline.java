@@ -28,4 +28,7 @@ public class PreprocessedCorrelationPipeline extends CorrelationSlidingWindowTra
     public String getName() {
         return name;
     }
+
+    @Override
+    public String getMetricType() { return "correlation"; }
 }

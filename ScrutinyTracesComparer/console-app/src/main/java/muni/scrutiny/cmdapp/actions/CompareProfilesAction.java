@@ -135,6 +135,7 @@ public class CompareProfilesAction extends BaseAction {
                             tcoc.file_path = imageName;
                             tcoc.distance = cr.getBestSimilarity().getDistance();
                             tcoopc.comparisons.add(tcoc);
+                            tcoopc.metricType = cp.getMetricType();
                         }
                     }
                 }

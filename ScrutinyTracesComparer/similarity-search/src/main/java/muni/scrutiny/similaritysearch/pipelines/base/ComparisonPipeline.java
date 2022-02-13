@@ -6,4 +6,5 @@ public interface ComparisonPipeline<TPreprocessingResult extends PreprocessingRe
     TPreprocessingResult preprocess(Trace traceToPreprocess);
     TComaprisonResult compare(Trace referenceTrace, Trace preprocessedTrace);
     String getName();
+    String getMetricType();
 }

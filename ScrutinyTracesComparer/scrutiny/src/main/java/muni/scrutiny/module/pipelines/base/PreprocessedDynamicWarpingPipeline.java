@@ -88,4 +88,9 @@ public class PreprocessedDynamicWarpingPipeline extends TracePipeline<Comparison
     public String getName() {
         return name;
     }
+
+    @Override
+    public String getMetricType() {
+        return "distance";
+    }
 }

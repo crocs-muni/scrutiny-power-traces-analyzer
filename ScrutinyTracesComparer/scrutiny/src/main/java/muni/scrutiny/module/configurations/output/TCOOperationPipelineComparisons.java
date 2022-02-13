@@ -11,6 +11,9 @@ public class TCOOperationPipelineComparisons {
     @SerializedName("pipeline")
     public String pipeline;
 
+    @SerializedName("metric_type")
+    public String metricType;
+
     @SerializedName("comparisons")
     public List<TCOComparison> comparisons;
 }

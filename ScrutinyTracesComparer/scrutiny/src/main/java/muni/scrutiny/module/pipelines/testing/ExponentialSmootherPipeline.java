@@ -22,4 +22,9 @@ public class ExponentialSmootherPipeline extends TracePipeline {
     public String getName() {
         return "Exponential smoother";
     }
+
+    @Override
+    public String getMetricType() {
+        return null;
+    }
 }

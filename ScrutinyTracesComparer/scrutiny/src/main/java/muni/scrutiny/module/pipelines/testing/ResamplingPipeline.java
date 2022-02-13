@@ -26,4 +26,9 @@ public class ResamplingPipeline extends TracePipeline {
     public String getName() {
         return "resampling";
     }
+
+    @Override
+    public String getMetricType() {
+        return null;
+    }
 }
