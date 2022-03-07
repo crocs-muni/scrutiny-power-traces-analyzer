@@ -33,6 +33,10 @@ public class DataManager {
         return DataLoader.importFromCsv(filePath, DEFAULT_TIME_COLUMN, DEFAULT_VOLTAGE_COLUMN, loadTime);
     }
 
+    public static int getSamplingFrequency(Path filePath) throws IOException {
+        return DataLoader.getSamplingFrequency(filePath, DEFAULT_TIME_COLUMN, DEFAULT_VOLTAGE_COLUMN);
+    }
+
     public static void saveTrace(Path filePath, Trace trace) throws IOException {
         DataSaver.exportToCsv(trace, filePath);
     }

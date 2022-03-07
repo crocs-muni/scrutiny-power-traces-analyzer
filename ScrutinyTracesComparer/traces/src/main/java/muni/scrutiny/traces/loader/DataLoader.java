@@ -58,6 +58,40 @@ public class DataLoader {
         }
     }
 
+    public static int getSamplingFrequency(
+            Path filePath,
+            int timeColumn,
+            int voltageColumn)
+            throws IOException {
+        String[] csvRow;
+        String timeUnit;
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath.toFile()))) {
+            try (CSVReader csvReader = new CSVReader(bufferedReader)) {
+                csvRow = csvReader.readNext();
+                if (csvRow.length < timeColumn && csvRow.length < voltageColumn) {
+                    throw new IOException("Invalid format of CSV file.");
+                }
+
+                csvRow = csvReader.readNext();
+                timeUnit = csvRow[timeColumn];
+                csvReader.skip(1);
+
+                return getSamplingFrequency(filePath, timeColumn, timeUnit);
+            }
+        }
+    }
+
+    private static int getSamplingFrequency(Path filePath, int timeColumn, String timeUnit) throws IOException {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath.toFile()))) {
+            try (CSVReader csvReader = new CSVReader(bufferedReader)) {
+                csvReader.skip(3);
+                double t0 = Double.parseDouble(csvReader.readNext()[timeColumn]);
+                double t1 = Double.parseDouble(csvReader.readNext()[timeColumn]);
+                return Trace.getSamplingFrequency(t0, t1, timeUnit);
+            }
+        }
+    }
+
     private static int countLinesInCsv(Path filePath) throws IOException {
         try (InputStream is = new BufferedInputStream(new FileInputStream(filePath.toFile()))) {
             byte[] c = new byte[1024];
@@ -73,17 +107,6 @@ public class DataLoader {
                 }
             }
             return (count == 0 && !empty) ? 1 : count;
-        }
-    }
-
-    private static int getSamplingFrequency(Path filePath, int timeColumn, String timeUnit) throws IOException {
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath.toFile()))) {
-            try (CSVReader csvReader = new CSVReader(bufferedReader)) {
-                csvReader.skip(3);
-                double t0 = Double.parseDouble(csvReader.readNext()[timeColumn]);
-                double t1 = Double.parseDouble(csvReader.readNext()[timeColumn]);
-                return Trace.getSamplingFrequency(t0, t1, timeUnit);
-            }
         }
     }
 }

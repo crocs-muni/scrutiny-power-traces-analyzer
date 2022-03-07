@@ -33,7 +33,13 @@ public class SimpleOffsetNormalizer implements Preprocessor {
                 voltageArray[i] += offset;
             }
 
-            return traceToPreprocess;
+            return new Trace(
+                    traceToPreprocess.getName(),
+                    voltageArray.length,
+                    traceToPreprocess.getVoltageUnit(),
+                    traceToPreprocess.getTimeUnit(),
+                    voltageArray,
+                    traceToPreprocess.getSamplingFrequency());
         }
 
         double newMinimalVoltage = traceToPreprocess.getMinimalVoltage();

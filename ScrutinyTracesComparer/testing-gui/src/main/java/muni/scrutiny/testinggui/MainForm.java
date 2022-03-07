@@ -32,6 +32,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -120,6 +121,8 @@ public class MainForm {
     private void initVisualizationTab() {
         pipelinesComboBox.addItem(new ComboItemModel("-", ""));
         pipelinesComboBox.addItem(new ComboItemModel("Resampling Pipeline", ResamplingPipeline.class.getName()));
+        pipelinesComboBox.addItem(new ComboItemModel("Up/Downsampling Pipeline", "Up/DownsamplingPipeline"));
+        pipelinesComboBox.addItem(new ComboItemModel("Scaling/Offsetting Pipeline", "Scaling/OffsettingPipeline"));
         pipelinesComboBox.addItem(new ComboItemModel("Butterworth Pipeline", ButterworthFilterPipeline.class.getName()));
         pipelinesComboBox.addItem(new ComboItemModel("Chebyshev Pipeline", ChebyshevFilterPipeline.class.getName()));
         pipelinesComboBox.addItem(new ComboItemModel("Bessel Pipeline", BesselFilterPipeline.class.getName()));
@@ -129,7 +132,11 @@ public class MainForm {
             public void actionPerformed(ActionEvent e) {
                 String value = ((ComboItemModel) pipelinesComboBox.getSelectedItem()).getValue();
                 if (ResamplingPipeline.class.getName().contains(value)) {
-                    customDataJson.setText("{\"sampling_frequency\":1000000, \"radius\":10}");
+                    customDataJson.setText("{\"sampling_frequency\":1000000, \"interval_radius\":10}");
+                } else if (value.contains("Up/DownsamplingPipeline")) {
+                    customDataJson.setText("{\"before\":{\"sampling_frequency\":5000000, \"interval_radius\":10}, \"after\":{\"sampling_frequency\":20000000, \"interval_radius\":10}}");
+                } else if (value.contains("Scaling/OffsettingPipeline")) {
+                    customDataJson.setText("{\"scale\":2, \"offset\":10}");
                 } else if (ButterworthFilterPipeline.class.getName().contains(value)) {
                     customDataJson.setText("{\"cutoff_frequency\":10000}");
                 } else if (ChebyshevFilterPipeline.class.getName().contains(value)) {
@@ -227,6 +234,22 @@ public class MainForm {
                     ResamplingPipelineJson rpj = (new Gson()).fromJson(customDataJson.getText(), ResamplingPipelineJson.class);
                     trp = new ResamplingPipeline(rpj.sampingFrequency, rpj.intervalRadius);
                     subtitleMessage = "Resampling from sampling frequency " + trace.getSamplingFrequency() + " to " + rpj.sampingFrequency;
+                } else if (comboItemModel.getValue().contains("Up/DownsamplingPipeline")) {
+                    ResamplingPipelinesJson rpjs = (new Gson()).fromJson(customDataJson.getText(), ResamplingPipelinesJson.class);
+                    trp = new ResamplingPipeline(rpjs.before.sampingFrequency, rpjs.before.intervalRadius);
+                    ResamplingPipeline atrp = new ResamplingPipeline(rpjs.after.sampingFrequency, rpjs.after.intervalRadius);
+                    ChartTrace ctAdd = new ChartTrace(atrp.preprocess(trace).getPreprocessedTrace(), TracePlotter.GRAY, new Ellipse2D.Double(-7, -7, 14, 14));
+                    ctAdd.setDisplayName(trace.getDisplayName() + "-after-upsample");
+                    ctAdd.setOrder(30);
+                    chartTraces.add(ctAdd);
+                } else if (comboItemModel.getValue().contains("Scaling/OffsettingPipeline")) {
+                    ScalingOffsettingPipelineJson sopj = (new Gson()).fromJson(customDataJson.getText(), ScalingOffsettingPipelineJson.class);
+                    trp = new ScalingPipeline(sopj.scale);
+                    OffsettingPipeline otrp = new OffsettingPipeline(sopj.offset);
+                    ChartTrace ctAdd = new ChartTrace(otrp.preprocess(trace).getPreprocessedTrace(), TracePlotter.GRAY, new BasicStroke(0.5f));
+                    ctAdd.setDisplayName(trace.getDisplayName() + "-offset");
+                    ctAdd.setOrder(30);
+                    chartTraces.add(ctAdd);
                 } else if (ButterworthFilterPipeline.class.getName().contains(comboItemModel.getValue())) {
                     ButterworthFilterPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ButterworthFilterPipelineJson.class);
                     trp = new ButterworthFilterPipeline(bfpj.cutoffFrequency);
@@ -263,7 +286,6 @@ public class MainForm {
                 chartTraces.add(ctBefore);
                 chartTraces.add(ctAfter);
                 UITracePlotter uiTracePlotter = new UITracePlotter(chartTraces);
-
                 Dimension panelSize = new Dimension(visualizationChartPanel.getWidth(), visualizationChartPanel.getHeight());
                 JFreeChart jfc = uiTracePlotter.createXYLineChart(trace.getDisplayName() + " " + comboItemModel.getKey(), trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
                 jfc.addSubtitle(new TextTitle(subtitleMessage));

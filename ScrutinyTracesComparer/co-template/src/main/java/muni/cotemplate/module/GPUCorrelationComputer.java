@@ -12,13 +12,13 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class GPUCorrelationComputer implements Runnable {
     //input
     private final float[] voltage;
     private final int[] froms;
     private final int[] tos;
-    private final int characterCount;
     private final int segmentWidth;
     private final int endingIndex;
     private final int devicesCount;
@@ -38,7 +38,6 @@ public class GPUCorrelationComputer implements Runnable {
             int devicesCount) {
         this.voltage = getFloatArray(voltage);
         this.correlations = correlations;
-        this.characterCount = characterCount;
         this.segmentWidth = segmentWidth;
         this.endingIndex = endingIndex;
         this.froms = getIntArray(characterIntervals, p -> p.getKey());
@@ -54,39 +53,40 @@ public class GPUCorrelationComputer implements Runnable {
         final float[] voltageLocal = voltage;
         final int[] fromsLocal = froms;
         final int[] tosLocal = tos;
-        final int characterCountLocal = characterCount;
         final int segmentWidthLocal = segmentWidth;
         Kernel kernel = new Kernel() {
             @Override
             public void run() {
-                int windowIndex = getGlobalId();
+                int windowIndex = getGlobalId(0);
                 float correlationSums = 0f;
                 for (int intervalIndex = 0; intervalIndex < intervalsLengthLocal; intervalIndex++) {
-                    float segmentCorrelation = correlationCoefficientStable(windowIndex + fromsLocal[intervalIndex],windowIndex + tosLocal[intervalIndex], windowIndex);
+                    float segmentCorrelation = correlationCoefficientStable(fromsLocal[intervalIndex], tosLocal[intervalIndex], windowIndex);
                     correlationSums += segmentCorrelation;
                 }
 
-                correlationsForCharacter[windowIndex] = correlationSums / characterCountLocal;
+                correlationsForCharacter[windowIndex] = correlationSums / intervalsLengthLocal;
             }
 
             private float correlationCoefficientStable(final int intervalFrom, final int intervalTo, final int windowIndex) {
-                float sumX = 0;
-                float sumY = 0;
-                float sumXY = 0;
-                float squareSumX = 0;
-                float squareSumY = 0;
-                for (int intervalIndex = intervalFrom; intervalIndex < intervalTo; intervalIndex++) {
+                float sumX = 0f;
+                float sumY = 0f;
+                float sumXY = 0f;
+                float squareSumX = 0f;
+                float squareSumY = 0f;
+                int localIndex = 0;
+                for (int intervalIndex = intervalFrom + windowIndex; intervalIndex < intervalTo + windowIndex; intervalIndex++) {
                     float segmentSum = 0f;
                     for (int segmentIndex = 0; segmentIndex < intervalsLengthLocal; segmentIndex++) {
-                        segmentSum = segmentSum + voltageLocal[fromsLocal[segmentIndex] + (intervalIndex - windowIndex)];
+                        segmentSum = segmentSum + voltageLocal[fromsLocal[segmentIndex] + windowIndex + localIndex];
                     }
 
-                    float segmentAverageOnIndex = segmentSum / characterCountLocal;
+                    float segmentAverageOnIndex = segmentSum / intervalsLengthLocal;
                     sumX = sumX + voltageLocal[intervalIndex];
                     sumY = sumY + segmentAverageOnIndex;
                     sumXY = sumXY + voltageLocal[intervalIndex] * segmentAverageOnIndex;
                     squareSumX = squareSumX + voltageLocal[intervalIndex] * voltageLocal[intervalIndex];
                     squareSumY = squareSumY + segmentAverageOnIndex * segmentAverageOnIndex;
+                    localIndex++;
                 }
 
                 float corr = (segmentWidthLocal * sumXY - sumX * sumY) / sqrt(((segmentWidthLocal * squareSumX - sumX * sumX)*(segmentWidthLocal * squareSumY - sumY * sumY))+0.00001f);
@@ -94,6 +94,24 @@ public class GPUCorrelationComputer implements Runnable {
             }
         };
 
+        printDevicesInfo();
+        Range range;
+        if (devicesCount > 0) {
+            range = Range.create(endingIndex, devicesCount);
+        } else {
+            range = Range.create(endingIndex);
+        }
+
+        kernel.execute(range);
+        double[] doubleCorrelations = correlations.get(currentCharacter);
+        for (int i = 0; i < correlationsForCharacter.length; i++) {
+            doubleCorrelations[i] = correlationsForCharacter[i];
+        }
+
+        kernel.dispose();
+    }
+
+    private void printDevicesInfo() {
         System.out.println("com.aparapi.examples.info.Main");
         List<OpenCLPlatform> platforms = (new OpenCLPlatform()).getOpenCLPlatforms();
         System.out.println("Machine contains " + platforms.size() + " OpenCL platforms");
@@ -128,27 +146,6 @@ public class GPUCorrelationComputer implements Runnable {
             System.out.println(device);
             System.out.println();
         }
-
-//        Device preferredDevice = null;
-//        try {
-//            preferredDevice = preferences.getPreferredDevices(null).get(0);
-//        } catch (Exception _) {
-//        }
-
-        Range range;
-        if (devicesCount > 0) {
-            range = Range.create(endingIndex, devicesCount);
-        } else {
-            range = Range.create(endingIndex);
-        }
-
-        kernel.execute(range);
-        double[] doubleCorrelations = correlations.get(currentCharacter);
-        for (int i = 0; i < correlationsForCharacter.length; i++) {
-            doubleCorrelations[i] = correlationsForCharacter[i];
-        }
-
-        kernel.dispose();
     }
 
     private float[] getFloatArray(double[] doubleVoltage) {

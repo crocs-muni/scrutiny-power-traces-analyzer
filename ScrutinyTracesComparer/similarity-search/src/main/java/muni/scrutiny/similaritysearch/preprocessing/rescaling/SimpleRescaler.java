@@ -33,7 +33,13 @@ public class SimpleRescaler implements Preprocessor {
                 voltageArray[i] /= scale;
             }
 
-            return traceToPreprocess;
+            return new Trace(
+                    traceToPreprocess.getName(),
+                    voltageArray.length,
+                    traceToPreprocess.getVoltageUnit(),
+                    traceToPreprocess.getTimeUnit(),
+                    voltageArray,
+                    traceToPreprocess.getSamplingFrequency());
         }
 
         double newMinimalVoltage = traceToPreprocess.getMinimalVoltage();

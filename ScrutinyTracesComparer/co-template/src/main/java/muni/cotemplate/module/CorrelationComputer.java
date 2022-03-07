@@ -74,9 +74,9 @@ public class CorrelationComputer implements Runnable {
         double averageCorrelation = 0;
         for (Pair<Integer, Integer> interval : characterIntervals.getValue()) {
             double segmentCorrelation = correlationCoefficientStable(voltage, averageSegment, windowIndex + interval.getKey(), windowIndex + interval.getValue(), segmentWidth);
-            averageCorrelation += segmentCorrelation/ characterCount;
+            averageCorrelation += segmentCorrelation;
         }
-        return averageCorrelation;
+        return averageCorrelation / characterCount;
     }
 
     private double[] computeAverageSegment(double[] voltage, Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals, int characterCount, int segmentWidth, int windowIndex) {
@@ -84,7 +84,7 @@ public class CorrelationComputer implements Runnable {
         for (Pair<Integer, Integer> interval : characterIntervals.getValue()) {
             int segmentIndex = 0;
             for (int traceIndex = interval.getKey(); traceIndex < interval.getValue(); traceIndex++) {
-                averageSegment[segmentIndex] += voltage[windowIndex + traceIndex]/ characterCount;
+                averageSegment[segmentIndex] += voltage[windowIndex + traceIndex] / characterCount;
                 segmentIndex++;
             }
         }

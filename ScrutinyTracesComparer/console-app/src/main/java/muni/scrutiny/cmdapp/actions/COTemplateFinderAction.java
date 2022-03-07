@@ -19,6 +19,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.ui.Layer;
 
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -127,16 +128,16 @@ public class COTemplateFinderAction extends BaseAction {
                 long end = System.currentTimeMillis();
                 System.out.println("Search for most correlated CO ended in: " + (double)(end-start)/1000 + "s");
 
-                Pair<Integer, Double> maxCorrIndexValue = computeWeightedCorrelations(characterCounts, characterWidths, endingIndex, correlations);
-                visualizeCOSearch(trace, outputPath, characterCounts, characterWidths, maxCorrIndexValue.getKey(), timeIteration);
-                if (coTemplateSearchResult == null || coTemplateSearchResult.correlation < maxCorrIndexValue.getValue()) {
+                WeightedCorrelationResult wcr = computeWeightedCorrelations(characterCounts, characterWidths, voltage.length, correlations);
+                visualizeCOSearch(trace, outputPath, wcr, timeIteration, lastIntervalIndex);
+                if (coTemplateSearchResult == null || coTemplateSearchResult.correlation < wcr.maxCorrelationValue) {
                     coTemplateSearchResult = new COTemplateSearchResult(
                             timeIteration,
                             maskIntervals,
                             characterWidths,
                             lastIntervalIndex,
-                            maxCorrIndexValue.getValue(),
-                            maxCorrIndexValue.getKey());
+                            wcr.maxCorrelationValue,
+                            wcr.maxCorrelationIndex);
                 }
             }
 
@@ -197,7 +198,7 @@ public class COTemplateFinderAction extends BaseAction {
             for (Pair<Integer, Integer> interval : intervals.getValue()) {
                 int segmentIndex = 0;
                 for (int intervalIndex = interval.getKey(); intervalIndex < interval.getValue(); intervalIndex++) {
-                    characterTemplateAverage[segmentIndex] += voltage[intervalIndex] / intervals.getValue().size();
+                    characterTemplateAverage[segmentIndex] += voltage[coTemplateSearchResult.correlationIndex + intervalIndex] / intervals.getValue().size();
                     segmentIndex++;
                 }
             }
@@ -208,17 +209,22 @@ public class COTemplateFinderAction extends BaseAction {
         return averageTemplates;
     }
 
-    private Pair<Integer, Double> computeWeightedCorrelations(
+    private WeightedCorrelationResult computeWeightedCorrelations(
             HashMap<Character, Integer> characterCounts,
             HashMap<Character, Integer> characterWidths,
-            int endingIndex,
+            int voltageLength,
             HashMap<Character, double[]> correlations) {
-        double maxCorr = Double.MIN_VALUE;
-        int maxCorrIndex = 0;
-        for (int correlationIndex = 0; correlationIndex < endingIndex; correlationIndex++) {
+        WeightedCorrelationResult wcr = new WeightedCorrelationResult(0, Double.MIN_VALUE, new double[voltageLength]);
+        for (int correlationIndex = 0; correlationIndex < voltageLength; correlationIndex++) {
             double weightedCorrelationsNumerator = 0;
             double weightedCorrelationsDenominator = 0;
             for (Map.Entry<Character, double[]> characterCorrelations : correlations.entrySet()) {
+                if (correlationIndex >= characterCorrelations.getValue().length) {
+                    weightedCorrelationsNumerator = 0;
+                    weightedCorrelationsDenominator = 1;
+                    break;
+                }
+
                 int characterCount = characterCounts.get(characterCorrelations.getKey());
                 int characterWidth = characterWidths.get(characterCorrelations.getKey());
                 weightedCorrelationsNumerator += characterCount * characterWidth * characterCorrelations.getValue()[correlationIndex];
@@ -226,14 +232,15 @@ public class COTemplateFinderAction extends BaseAction {
             }
 
             double iterationCorr = weightedCorrelationsNumerator / weightedCorrelationsDenominator;
-            if (maxCorr < iterationCorr) {
-                maxCorr = iterationCorr;
-                maxCorrIndex = correlationIndex;
+            wcr.correlationsArray[correlationIndex] = iterationCorr;
+            if (wcr.maxCorrelationValue < iterationCorr) {
+                wcr.maxCorrelationValue = iterationCorr;
+                wcr.maxCorrelationIndex = correlationIndex;
             }
         }
 
-        System.out.println("Max corr index is: " + maxCorrIndex + " with corr: " + maxCorr);
-        return Pair.of(maxCorrIndex, maxCorr);
+        System.out.println("Max corr index is: " + wcr.maxCorrelationIndex + " with corr: " + wcr.maxCorrelationValue);
+        return wcr;
     }
 
     private void findMostCorrelatedSegment(
@@ -287,22 +294,27 @@ public class COTemplateFinderAction extends BaseAction {
     private void visualizeCOSearch(
             Trace trace,
             Path outputPath,
-            HashMap<Character, Integer> characterCounts,
-            HashMap<Character, Integer> characterWidths,
-            int maxCorrIndex,
-            int timeIteration) throws IOException {
+            WeightedCorrelationResult wcr,
+            int timeIteration,
+            int lastIndex) throws IOException {
         ChartTrace ct = new ChartTrace(trace, TracePlotter.BLUE);
         TracePlotter tp = new TracePlotter(ct);
-        String chartName = trace.getDisplayName() + "-" + timeIteration;
+        String chartName = "Highlighted-" + trace.getDisplayName() + "-" + timeIteration;
         JFreeChart jfc = tp.createXYLineChart(chartName, trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
         IntervalMarker marker = new IntervalMarker(
-                trace.getTimeOnIndex(maxCorrIndex),
-                trace.getTimeOnIndex(maxCorrIndex + characterWidths.get('X') * characterCounts.get('X')));
+                trace.getTimeOnIndex(wcr.maxCorrelationIndex),
+                trace.getTimeOnIndex(wcr.maxCorrelationIndex + lastIndex));
         marker.setPaint(TracePlotter.ORANGE);
         marker.setAlpha(0.2f);
         jfc.getXYPlot().addDomainMarker(marker, Layer.BACKGROUND);
         String imageName = FileUtils.saveComparisonImage(outputPath, jfc);
-        System.out.println("Image saved to: " + imageName);
+        System.out.println("Highled area image saved to: " + imageName);
+
+        tp = new TracePlotter(wcr.getCorrelationsChartTrace(trace));
+        chartName = "Correlations-" + trace.getDisplayName() + "-" + timeIteration;
+        jfc = tp.createXYLineChart(chartName, trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
+        imageName = FileUtils.saveComparisonImage(outputPath, jfc);
+        System.out.println("Correlations image saved to: " + imageName);
     }
 
     private HashMap<Character, double[]> initializeCorrelations(HashMap<Character, List<Pair<Integer, Integer>>> maskIntervals, int endingIndex) {
@@ -316,7 +328,8 @@ public class COTemplateFinderAction extends BaseAction {
     private int generateMaskIntervalsForTimes(
             COTemplateConfiguration coTemplateConfiguration,
             int samplingFrequency,
-            int timeIteration, HashMap<Character, List<Pair<Integer, Integer>>> maskIntervals,
+            int timeIteration,
+            HashMap<Character, List<Pair<Integer, Integer>>> maskIntervals,
             HashMap<Character, Integer> characterWidths,
             int lastIntervalIndex) {
         for (int maskLetterIndex = 0; maskLetterIndex < coTemplateConfiguration.mask.length(); maskLetterIndex++) {
@@ -324,7 +337,7 @@ public class COTemplateFinderAction extends BaseAction {
             COTemplateMaskElement maskElement = coTemplateConfiguration.elements.stream().filter(e -> e.maskElement == maskCharacter).findFirst().orElse(new COTemplateMaskElement());
             int dataLengthFromOperationTime = (int)(samplingFrequency * maskElement.times.get(timeIteration));
             characterWidths.putIfAbsent(maskCharacter, dataLengthFromOperationTime);
-            if (!maskIntervals.containsKey(coTemplateConfiguration.mask.charAt(timeIteration))) {
+            if (!maskIntervals.containsKey(maskCharacter)) {
                 List<Pair<Integer, Integer>> elementIntervals = new ArrayList<>();
                 elementIntervals.add(Pair.of(lastIntervalIndex, lastIntervalIndex + dataLengthFromOperationTime));
                 maskIntervals.put(maskCharacter, elementIntervals);
@@ -374,6 +387,32 @@ public class COTemplateFinderAction extends BaseAction {
             this.wholeTemplateSize = wholeTemplateSize;
             this.correlation = correlation;
             this.correlationIndex = correlationIndex;
+        }
+    }
+
+    static class WeightedCorrelationResult {
+        public int maxCorrelationIndex;
+        public double maxCorrelationValue;
+        public double[] correlationsArray;
+
+        public WeightedCorrelationResult(
+                int maxCorrelationIndex,
+                double maxCorrelationValue,
+                double[] correlationsArray) {
+            this.maxCorrelationIndex = maxCorrelationIndex;
+            this.maxCorrelationValue = maxCorrelationValue;
+            this.correlationsArray = correlationsArray;
+        }
+
+        public ChartTrace getCorrelationsChartTrace(Trace traceCorrelationsBasedOn) {
+            Trace correlationTrace = new Trace(
+                    "Correlations",
+                    traceCorrelationsBasedOn.getDataCount(),
+                    traceCorrelationsBasedOn.getVoltageUnit(),
+                    traceCorrelationsBasedOn.getTimeUnit(),
+                    correlationsArray,
+                    traceCorrelationsBasedOn.getSamplingFrequency());
+            return new ChartTrace(correlationTrace, TracePlotter.BLUE);
         }
     }
 }

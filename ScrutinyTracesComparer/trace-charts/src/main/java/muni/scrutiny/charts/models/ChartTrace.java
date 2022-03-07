@@ -4,19 +4,22 @@ import muni.scrutiny.charts.TracePlotter;
 import muni.scrutiny.traces.models.Trace;
 
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 
 public class ChartTrace {
-    private final Trace trace;
-    private final Color color;
-    private final Stroke stroke;
-    private final int indexOffset;
+    private Trace trace;
+    private Color color;
+    private Stroke stroke = new BasicStroke();
+    private Shape shape = null;
+    private int indexOffset = 0;
     private String displayName;
     private int order;
+    private boolean shapesVisible = false;
+    private boolean linesVisible = true;
 
     public ChartTrace(Trace trace, Color color) {
         this.trace = trace;
         this.color = color;
-        this.indexOffset = 0;
         this.stroke = TracePlotter.basicChartStroke;
     }
 
@@ -30,8 +33,23 @@ public class ChartTrace {
     public ChartTrace(Trace trace, Color color, Stroke stroke) {
         this.trace = trace;
         this.color = color;
-        this.indexOffset = 0;
         this.stroke = stroke;
+    }
+
+
+    public ChartTrace(Trace trace, Color color, Stroke stroke, Shape shape) {
+        this.trace = trace;
+        this.color = color;
+        this.stroke = stroke;
+        this.shape = shape;
+        shapesVisible = true;
+    }
+
+    public ChartTrace(Trace trace, Color color, Shape shape) {
+        this.trace = trace;
+        this.color = color;
+        this.shape = shape;
+        shapesVisible = true;
     }
 
     public ChartTrace(Trace trace, Color color, int indexOffset, Stroke stroke) {
@@ -54,6 +72,8 @@ public class ChartTrace {
     }
 
     public Stroke getStroke() { return this.stroke; }
+
+    public Shape getShape() { return this.shape; }
 
     public String getDisplayName() { return displayName; }
 

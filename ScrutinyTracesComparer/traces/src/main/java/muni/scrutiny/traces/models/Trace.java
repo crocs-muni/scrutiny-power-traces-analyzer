@@ -275,6 +275,19 @@ public class Trace {
         return voltageMinimum;
     }
 
+    public double getAverageOfFirstNValues(int n) {
+        if (n < dataCount) {
+            double sum = 0;
+            for (int i = 0; i < n; i++) {
+                sum += voltageArray[i];
+            }
+
+            return sum/n;
+        }
+
+        throw new ArrayIndexOutOfBoundsException("Voltage is out of bounds.");
+    }
+
     public static int getSamplingFrequency(double t0, double t1, String timeUnit) {
         BigDecimal dT = BigDecimal.valueOf(t0)
                 .abs()

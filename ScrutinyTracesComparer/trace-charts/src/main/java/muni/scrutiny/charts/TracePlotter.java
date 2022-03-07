@@ -14,6 +14,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +34,7 @@ public class TracePlotter {
     public static final Color RED = new Color(219,68,55);
     public static final Color GREEN = new Color(15, 157, 88);
     public static final Color LIGHT_GREEN = new Color(127, 255, 148);
-    public static final Color GRAY = new Color(211, 211, 211);
+    public static final Color GRAY = new Color(125, 125, 125);
     public static final Color BLUE = new Color(66, 133, 244);
     public static final Color YELLOW = new Color(244, 180, 0);
     public static final Color ORANGE = new Color(255, 165, 0);
@@ -74,8 +75,16 @@ public class TracePlotter {
         for (ChartTrace trace : traces) {
             xyPlot.setDataset(index, new XYSeriesCollection(createXYSeries(trace)));
             XYLineAndShapeRenderer renderer = new DefaultXYItemRenderer();
-            renderer.setBaseShapesVisible(false);
-            renderer.setSeriesStroke(0, trace.getStroke());
+            renderer.setSeriesShapesVisible(0, trace.getShape() != null);
+            if (trace.getShape() != null) {
+                renderer.setSeriesShape(0, trace.getShape());
+            }
+
+            renderer.setSeriesLinesVisible(0, trace.getStroke() != null);
+            if (trace.getStroke() != null) {
+                renderer.setSeriesStroke(0, trace.getStroke());
+            }
+
             renderer.setSeriesPaint(0, trace.getColor());
             renderer.setSeriesVisibleInLegend(index, true);
             xyPlot.setRenderer(index, renderer);
