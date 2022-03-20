@@ -191,6 +191,10 @@ public class Trace {
         return getSamplingFrequencyTimeUnit() * getDataCount();
     }
 
+    public double getNormalizedTimeOnIndex(int index) {
+        return getSamplingFrequencyTimeUnit() * index;
+    }
+
     public String getVoltageUnit() {
         return voltageUnit;
     }
@@ -224,6 +228,40 @@ public class Trace {
         }
 
         return index;
+    }
+
+    public double getMaximalVoltage() {
+        return voltageMaximum;
+    }
+    
+    public double getMinimalVoltage() {
+        return voltageMinimum;
+    }
+
+    public double getAverageOfFirstNValues(int n) {
+        if (n < dataCount) {
+            double sum = 0;
+            for (int i = 0; i < n; i++) {
+                sum += voltageArray[i];
+            }
+
+            return sum/n;
+        }
+
+        throw new ArrayIndexOutOfBoundsException("Voltage is out of bounds.");
+    }
+
+    public double getAverageOfLastNValues(int n) {
+        if (n < dataCount) {
+            double sum = 0;
+            for (int i = getDataCount(); i > getDataCount() - n; i--) {
+                sum += voltageArray[i];
+            }
+
+            return sum/n;
+        }
+
+        throw new ArrayIndexOutOfBoundsException("Voltage is out of bounds.");
     }
 
     public int getSamplingFrequency() {
@@ -266,27 +304,7 @@ public class Trace {
                 .divide(UnitsHelper.getInvertedTimeUnitConstant(timeUnit), 10, RoundingMode.HALF_UP);
         return dT.multiply(UnitsHelper.getInvertedTimeUnitConstant(timeUnit)).doubleValue();
     }
-    
-    public double getMaximalVoltage() {
-        return voltageMaximum;
-    }
-    
-    public double getMinimalVoltage() {
-        return voltageMinimum;
-    }
 
-    public double getAverageOfFirstNValues(int n) {
-        if (n < dataCount) {
-            double sum = 0;
-            for (int i = 0; i < n; i++) {
-                sum += voltageArray[i];
-            }
-
-            return sum/n;
-        }
-
-        throw new ArrayIndexOutOfBoundsException("Voltage is out of bounds.");
-    }
 
     public static int getSamplingFrequency(double t0, double t1, String timeUnit) {
         BigDecimal dT = BigDecimal.valueOf(t0)

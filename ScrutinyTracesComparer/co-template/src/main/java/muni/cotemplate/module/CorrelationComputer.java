@@ -91,7 +91,7 @@ public class CorrelationComputer implements Runnable {
         return averageSegment;
     }
 
-    private double correlationCoefficientStable(double[] voltage, double[] averageSegment, int intervalFrom, int intervalTo, int n) {
+    public static double correlationCoefficientStable(double[] voltage, double[] averageSegment, int intervalFrom, int intervalTo, int n) {
         double sumX = 0;
         double sumY = 0;
         double sumXY = 0;

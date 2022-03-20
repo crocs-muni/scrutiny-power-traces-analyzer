@@ -40,6 +40,11 @@ public abstract class BaseAction implements Action {
         return Integer.parseInt(ap.getValueOrDefault());
     }
 
+    protected double getParameterAsDouble(String parameterKey) {
+        ActionParameter ap = getActionParameters().get(parameterKey);
+        return Double.parseDouble(ap.getValueOrDefault());
+    }
+
     private void parseFlags(List<String> parametersCopy, List<Integer> indexesToDelete) {
         for (Map.Entry<String, ActionFlag> argument : getActionFlags().entrySet()) {
             for (int i = 0; i < parametersCopy.size(); i++) {

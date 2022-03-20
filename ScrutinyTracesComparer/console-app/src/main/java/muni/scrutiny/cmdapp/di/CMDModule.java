@@ -2,10 +2,7 @@ package muni.scrutiny.cmdapp.di;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import muni.scrutiny.cmdapp.actions.COTemplateFinderAction;
-import muni.scrutiny.cmdapp.actions.CompareProfilesAction;
-import muni.scrutiny.cmdapp.actions.ConcatTracesAction;
-import muni.scrutiny.cmdapp.actions.CreateReferenceProfileAction;
+import muni.scrutiny.cmdapp.actions.*;
 import muni.scrutiny.cmdapp.actions.base.Action;
 
 public class CMDModule extends AbstractModule {
@@ -23,5 +20,11 @@ public class CMDModule extends AbstractModule {
         bind(Action.class)
                 .annotatedWith(Names.named(ConcatTracesAction.name))
                 .toInstance(new ConcatTracesAction());
+        bind(Action.class)
+                .annotatedWith(Names.named(PeaksFinderAction.name))
+                .toInstance(new PeaksFinderAction());
+        bind(Action.class)
+                .annotatedWith(Names.named(TraceClassifierAction.name))
+                .toInstance(new TraceClassifierAction());
     }
 }

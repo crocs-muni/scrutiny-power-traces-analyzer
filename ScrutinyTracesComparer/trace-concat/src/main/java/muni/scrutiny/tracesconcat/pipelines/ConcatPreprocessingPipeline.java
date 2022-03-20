@@ -12,10 +12,10 @@ import muni.scrutiny.traces.models.Trace;
 public class ConcatPreprocessingPipeline extends TracePipeline {
     public static final String name = "cpp";
 
-    public ConcatPreprocessingPipeline(int desiredSamplingFrequency, double referenceMinimum) {
+    public ConcatPreprocessingPipeline(int desiredSamplingFrequency, double offset) {
         super(new TraceIntervalResampler(desiredSamplingFrequency, new MeanProcessor(), 1),
                 new ButterworthLowpassFilter(null),
-                new SimpleOffsetNormalizer(referenceMinimum, referenceMinimum, null, null));
+                new SimpleOffsetNormalizer(0, 0, offset, null));
     }
 
     @Override

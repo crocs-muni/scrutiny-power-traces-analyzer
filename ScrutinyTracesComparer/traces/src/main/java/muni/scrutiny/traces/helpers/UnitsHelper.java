@@ -11,4 +11,12 @@ public class UnitsHelper {
 
         return new BigDecimal(1);
     }
+
+    public static double convertToSeconds(double val, String sourceTimeUnit) {
+        if (sourceTimeUnit.contains("ms")) {
+            return val / 1000;
+        }
+
+        return val;
+    }
 }

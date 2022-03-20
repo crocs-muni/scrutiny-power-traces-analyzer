@@ -26,4 +26,22 @@ public class TCOOperation {
 
     @SerializedName("operation_present")
     public boolean operationPresent;
+
+    public double getConfidenceIntervalLowerBound(String pipeline, double p) {
+        TCOOperationPipelineComparisons tcoopc = comparisonResults
+                .stream()
+                .filter(cr -> cr.metricType.equalsIgnoreCase(pipeline))
+                .findFirst()
+                .orElse(null);
+        return tcoopc != null ? tcoopc.getConfidenceIntervalLowerBound(p) : 0;
+    }
+
+    public double getConfidenceIntervalUpperBound(String pipeline, double p) {
+        TCOOperationPipelineComparisons tcoopc = comparisonResults
+                .stream()
+                .filter(cr -> cr.pipeline.equalsIgnoreCase(pipeline))
+                .findFirst()
+                .orElse(null);
+        return tcoopc != null ? tcoopc.getConfidenceIntervalUpperBound(p) : 0;
+    }
 }

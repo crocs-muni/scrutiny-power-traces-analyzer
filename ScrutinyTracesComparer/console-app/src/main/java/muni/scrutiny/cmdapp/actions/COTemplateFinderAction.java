@@ -3,8 +3,10 @@ package muni.scrutiny.cmdapp.actions;
 import com.google.gson.Gson;
 import muni.cotemplate.module.CorrelationComputer;
 import muni.cotemplate.module.GPUCorrelationComputer;
-import muni.cotemplate.module.configurations.COTemplateConfiguration;
-import muni.cotemplate.module.configurations.COTemplateMaskElement;
+import muni.cotemplate.module.configurations.input.COTemplateConfiguration;
+import muni.cotemplate.module.configurations.input.COTemplateMaskElement;
+import muni.cotemplate.module.configurations.output.COTemplateFinderResult;
+import muni.cotemplate.module.configurations.output.COTemplateFinderWidthResult;
 import muni.scrutiny.charts.TracePlotter;
 import muni.scrutiny.charts.models.ChartTrace;
 import muni.scrutiny.cmdapp.actions.base.ActionException;
@@ -12,15 +14,18 @@ import muni.scrutiny.cmdapp.actions.base.ActionFlag;
 import muni.scrutiny.cmdapp.actions.base.ActionParameter;
 import muni.scrutiny.cmdapp.actions.base.BaseAction;
 import muni.scrutiny.cmdapp.actions.utils.FileUtils;
+import muni.scrutiny.module.configurations.module.TracesComparerDevice;
+import muni.scrutiny.module.configurations.module.TracesComparerModule;
 import muni.scrutiny.traces.DataManager;
+import muni.scrutiny.traces.helpers.UnitsHelper;
 import muni.scrutiny.traces.models.Trace;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.ui.Layer;
 
-import java.awt.*;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -98,6 +103,10 @@ public class COTemplateFinderAction extends BaseAction {
             int timeIterations = coTemplateConfiguration.getimesCount();
             System.out.println("Time iterations: " + timeIterations);
             COTemplateSearchResult coTemplateSearchResult = null;
+            COTemplateFinderResult cotfr = new COTemplateFinderResult();
+            cotfr.usedConfig = coTemplateConfiguration;
+            cotfr.realTracePath = tracePath.getFileName().toString();
+            cotfr.partialResults = new ArrayList<>();
             long start = System.currentTimeMillis();
             for (int timeIteration = 0; timeIteration < timeIterations; timeIteration++) {
                 System.out.println("Starting time iteration: " + (timeIteration+1));
@@ -122,14 +131,14 @@ public class COTemplateFinderAction extends BaseAction {
                 for (Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals : maskIntervals.entrySet()) {
                     int characterCount = characterCounts.get(characterIntervals.getKey());
                     int segmentWidth = characterWidths.get(characterIntervals.getKey());
-                    findMostCorrelatedSegment(voltage, endingIndex, correlations, characterIntervals, characterCount, segmentWidth, devicesCount);
+                    findMostCorrelatedSegment(voltage, trace.getMaximalVoltage(), endingIndex, correlations, characterIntervals, characterCount, segmentWidth, devicesCount);
                 }
 
                 long end = System.currentTimeMillis();
                 System.out.println("Search for most correlated CO ended in: " + (double)(end-start)/1000 + "s");
 
                 WeightedCorrelationResult wcr = computeWeightedCorrelations(characterCounts, characterWidths, voltage.length, correlations);
-                visualizeCOSearch(trace, outputPath, wcr, timeIteration, lastIntervalIndex);
+                visualizeCOSearch(trace, outputPath, wcr, timeIteration, lastIntervalIndex, cotfr);
                 if (coTemplateSearchResult == null || coTemplateSearchResult.correlation < wcr.maxCorrelationValue) {
                     coTemplateSearchResult = new COTemplateSearchResult(
                             timeIteration,
@@ -150,30 +159,61 @@ public class COTemplateFinderAction extends BaseAction {
                     trace.getTimeUnit(),
                     maskTemplate,
                     trace.getSamplingFrequency());
-            visualizeCOTemplate(maskTemplateTrace, outputPath);
-            saveTemplateTrace(trace, outputPath, maskTemplateTrace);
-//            for (int windowIndex = 0; windowIndex < voltage.length - maskTemplate.length; windowIndex++) {
-//                for (int templateIndex = 0; maskTemplate.length; templateIndex++) {
-//
-//                }
-//            }
+            visualizeCOTemplate(maskTemplateTrace, outputPath, cotfr);
+            cotfr.operationTemplatePath = saveTemplateTrace(trace, outputPath, maskTemplateTrace);
+
+            int templateFloatingWindowIterations = voltage.length - maskTemplate.length;
+            double[] templateCorrelations = new double[voltage.length];
+            for (int windowIndex = 0; windowIndex < templateFloatingWindowIterations; windowIndex++) {
+                templateCorrelations[windowIndex] = CorrelationComputer.correlationCoefficientStable(
+                    voltage,
+                    maskTemplate,
+                    windowIndex,
+                    windowIndex + maskTemplate.length,
+                    maskTemplate.length
+                );
+            }
+
+            Trace correlationTrace = new Trace(
+                    "Correlations_whole_COtemplate.csv",
+                    trace.getDataCount(),
+                    trace.getVoltageUnit(),
+                    trace.getTimeUnit(),
+                    templateCorrelations,
+                    trace.getSamplingFrequency());
+            cotfr.wholeOperationCorrelationPath = saveTrace(correlationTrace, outputPath);
+            visualizeCOTemplate(correlationTrace, outputPath, cotfr);
+            cotfr.operationLength = maskTemplate.length;
+            cotfr.operationLengthTime = UnitsHelper.convertToSeconds(maskTemplateTrace.getExecutionTime(), maskTemplateTrace.getTimeUnit());
+            try (PrintWriter out = new PrintWriter(outputPath.resolve("cotemplatefinder_result.json").toFile())) {
+                out.println(new Gson().toJson(cotfr));
+            }
         } catch (Exception ex) {
             throw new ActionException(ex);
         }
     }
 
-    private void saveTemplateTrace(Trace trace, Path outputPath, Trace maskTemplateTrace) throws IOException {
-        String templateName = trace.getDisplayName() + "-template.csv";
+    private String saveTemplateTrace(Trace trace, Path outputPath, Trace maskTemplateTrace) throws IOException {
+        String templateName = "Template_" + trace.getDisplayName() + ".csv";
         System.out.println("Template CSV saved to: " + templateName);
         DataManager.saveTrace(outputPath.resolve(templateName), maskTemplateTrace);
+        return templateName;
     }
 
-    private void visualizeCOTemplate(Trace maskTemplateTrace, Path outputPath) throws IOException {
+    private String saveTrace(Trace trace, Path outputPath) throws IOException {
+        String templateName = trace.getName();
+        System.out.println("Correlations CSV saved to: " + templateName);
+        DataManager.saveTrace(outputPath.resolve(templateName), trace);
+        return templateName;
+    }
+
+    private void visualizeCOTemplate(Trace maskTemplateTrace, Path outputPath, COTemplateFinderResult cotfr) throws IOException {
         TracePlotter tp = new TracePlotter(maskTemplateTrace);
-        String chartName = maskTemplateTrace.getDisplayName() + "-Template";
+        String chartName = "Template_" + maskTemplateTrace.getDisplayName();
         JFreeChart jfc = tp.createXYLineChart(chartName, maskTemplateTrace.getDisplayTimeUnit(), maskTemplateTrace.getDisplayVoltageUnit());
         String imageName = FileUtils.saveComparisonImage(outputPath, jfc);
         System.out.println("Template image saved to: " + imageName);
+        cotfr.templateImagePath = imageName;
     }
 
     private double[] createMaskTemplate(COTemplateSearchResult coTemplateSearchResult, HashMap<Character, double[]> averageTemplates) {
@@ -245,6 +285,7 @@ public class COTemplateFinderAction extends BaseAction {
 
     private void findMostCorrelatedSegment(
             double[] voltage,
+            double voltageMaximum,
             int endingIndex,
             HashMap<Character, double[]> correlations,
             Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals,
@@ -254,6 +295,7 @@ public class COTemplateFinderAction extends BaseAction {
         if (flags.get(graphicComputation).getValueOrDefault()) {
             GPUCorrelationComputer gpucc = new GPUCorrelationComputer(
                     voltage,
+                    voltageMaximum,
                     correlations,
                     characterIntervals,
                     characterCount,
@@ -284,6 +326,8 @@ public class COTemplateFinderAction extends BaseAction {
                     correlations,
                     characterIntervals,
                     characterCount,
+
+
                     segmentWidth,
                     0,
                     endingIndex);
@@ -296,10 +340,12 @@ public class COTemplateFinderAction extends BaseAction {
             Path outputPath,
             WeightedCorrelationResult wcr,
             int timeIteration,
-            int lastIndex) throws IOException {
+            int lastIndex,
+            COTemplateFinderResult cotfr) throws IOException {
+        COTemplateFinderWidthResult cotfwr = new COTemplateFinderWidthResult();
         ChartTrace ct = new ChartTrace(trace, TracePlotter.BLUE);
         TracePlotter tp = new TracePlotter(ct);
-        String chartName = "Highlighted-" + trace.getDisplayName() + "-" + timeIteration;
+        String chartName = "Highlighted_" + trace.getDisplayName() + "-" + timeIteration;
         JFreeChart jfc = tp.createXYLineChart(chartName, trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
         IntervalMarker marker = new IntervalMarker(
                 trace.getTimeOnIndex(wcr.maxCorrelationIndex),
@@ -307,14 +353,15 @@ public class COTemplateFinderAction extends BaseAction {
         marker.setPaint(TracePlotter.ORANGE);
         marker.setAlpha(0.2f);
         jfc.getXYPlot().addDomainMarker(marker, Layer.BACKGROUND);
-        String imageName = FileUtils.saveComparisonImage(outputPath, jfc);
-        System.out.println("Highled area image saved to: " + imageName);
+        cotfwr.highlightedTraceImagePath = FileUtils.saveComparisonImage(outputPath, jfc);
+        System.out.println("Highlighted area image saved to: " + cotfwr.highlightedTraceImagePath);
 
         tp = new TracePlotter(wcr.getCorrelationsChartTrace(trace));
         chartName = "Correlations-" + trace.getDisplayName() + "-" + timeIteration;
         jfc = tp.createXYLineChart(chartName, trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
-        imageName = FileUtils.saveComparisonImage(outputPath, jfc);
-        System.out.println("Correlations image saved to: " + imageName);
+        cotfwr.suboperationsCorrelationImagePath = FileUtils.saveComparisonImage(outputPath, jfc);
+        System.out.println("Correlations image saved to: " + cotfwr.suboperationsCorrelationImagePath);
+        cotfr.partialResults.add(cotfwr);
     }
 
     private HashMap<Character, double[]> initializeCorrelations(HashMap<Character, List<Pair<Integer, Integer>>> maskIntervals, int endingIndex) {

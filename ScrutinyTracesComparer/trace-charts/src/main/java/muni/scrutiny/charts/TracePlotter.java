@@ -24,12 +24,15 @@ public class TracePlotter {
     public static final float CHART_THICKNESS = 1.2f;
 
     public static final Stroke basicChartStroke = new BasicStroke(CHART_THICKNESS);
+    public static final Stroke thinChartStroke = new BasicStroke(0.5f);
     public static final Stroke basicDashedStroke = new BasicStroke(
             CHART_THICKNESS, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
             CHART_THICKNESS, new float[] {6.0f, 6.0f}, 0.0f);
     public static final Stroke connectionDashedStroke = new BasicStroke(
             CONNECTION_THICKNESS, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
             CONNECTION_THICKNESS, new float[] {6.0f, 6.0f}, 0.0f);
+
+    public static final Font f1BoldFont = new Font("F1", Font.BOLD, 16);
 
     public static final Color RED = new Color(219,68,55);
     public static final Color GREEN = new Color(15, 157, 88);

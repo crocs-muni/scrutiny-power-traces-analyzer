@@ -77,14 +77,17 @@ public class ConcatTracesAction  extends BaseAction {
             int dataCount = 0;
             String voltageUnit = null;
             String timeUnit = null;
-            double referenceMinimum = Double.MAX_VALUE;
+            double referenceStartingLevel = Double.MAX_VALUE;
             for (int i = 0; i < tcc.tracePaths.size(); i++) {
                 Path tracePath = tccPath.getParent().resolve(Paths.get(tcc.tracePaths.get(i)));
                 Trace tNew = DataManager.loadTrace(tracePath, false);
                 voltageUnit = tNew.getVoltageUnit();
                 timeUnit = tNew.getTimeUnit();
-                referenceMinimum = referenceMinimum == Double.MAX_VALUE ? tNew.getAverageOfFirstNValues(500) : referenceMinimum;
-                ConcatPreprocessingPipeline cpp = new ConcatPreprocessingPipeline(lowestSamplingFreq, referenceMinimum);
+                double tNewAverageOfN = tNew.getAverageOfFirstNValues((int)(tcc.getOffsetCoeff()*tNew.getDataCount()));
+                referenceStartingLevel = referenceStartingLevel == Double.MAX_VALUE
+                        ? tNewAverageOfN
+                        : referenceStartingLevel;
+                ConcatPreprocessingPipeline cpp = new ConcatPreprocessingPipeline(lowestSamplingFreq, referenceStartingLevel - tNewAverageOfN);
                 PreprocessingResult pr = cpp.preprocess(tNew);
                 Trace ptNew = pr.getPreprocessedTrace();
                 dataCount += ptNew.getDataCount();

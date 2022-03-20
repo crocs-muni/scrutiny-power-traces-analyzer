@@ -146,7 +146,7 @@ public class MainForm {
                 } else if (BesselFilterPipeline.class.getName().contains(value)) {
                     customDataJson.setText("{\"cutoff_frequency\":10000}");
                 } else if (ExponentialSmootherPipeline.class.getName().contains(value)) {
-                    customDataJson.setText("{\"sigma\":1}");
+                    customDataJson.setText("{\"alpha\":1}");
                 } else {
                     customDataJson.setText("");
                 }
@@ -272,8 +272,8 @@ public class MainForm {
                     subtitleMessage = "Filtering with cutoff frequency " + bfpj.cutoffFrequency;
                 } else if (ExponentialSmootherPipeline.class.getName().contains(comboItemModel.getValue())) {
                     ExponentialSmootherPipelineJson bfpj = (new Gson()).fromJson(customDataJson.getText(), ExponentialSmootherPipelineJson.class);
-                    trp = new ExponentialSmootherPipeline(bfpj.sigma);
-                    subtitleMessage = "Smoothing with alpha " + bfpj.sigma;
+                    trp = new ExponentialSmootherPipeline(bfpj.alpha);
+                    subtitleMessage = "Smoothing with alpha " + bfpj.alpha;
                 }
 
                 PreprocessingResult pr = trp.preprocess(trace);

@@ -1,4 +1,4 @@
-package muni.cotemplate.module.configurations;
+package muni.cotemplate.module.configurations.input;
 
 import com.google.gson.annotations.SerializedName;
 

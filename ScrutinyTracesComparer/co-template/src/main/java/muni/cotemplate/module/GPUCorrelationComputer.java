@@ -12,7 +12,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class GPUCorrelationComputer implements Runnable {
     //input
@@ -30,6 +29,7 @@ public class GPUCorrelationComputer implements Runnable {
 
     public GPUCorrelationComputer(
             double[] voltage,
+            double voltageMaximum,
             HashMap<Character, double[]> correlations,
             Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals,
             int characterCount,
@@ -68,16 +68,16 @@ public class GPUCorrelationComputer implements Runnable {
             }
 
             private float correlationCoefficientStable(final int intervalFrom, final int intervalTo, final int windowIndex) {
-                float sumX = 0f;
-                float sumY = 0f;
-                float sumXY = 0f;
-                float squareSumX = 0f;
-                float squareSumY = 0f;
-                int localIndex = 0;
+                float sumX = 0;
+                float sumY = 0;
+                float sumXY = 0;
+                float squareSumX = 0;
+                float squareSumY = 0;
                 for (int intervalIndex = intervalFrom + windowIndex; intervalIndex < intervalTo + windowIndex; intervalIndex++) {
-                    float segmentSum = 0f;
+                    float segmentSum = 0;
                     for (int segmentIndex = 0; segmentIndex < intervalsLengthLocal; segmentIndex++) {
-                        segmentSum = segmentSum + voltageLocal[fromsLocal[segmentIndex] + windowIndex + localIndex];
+                        int idx = fromsLocal[segmentIndex] + intervalIndex - intervalFrom;
+                        segmentSum = segmentSum + (voltageLocal[idx]);
                     }
 
                     float segmentAverageOnIndex = segmentSum / intervalsLengthLocal;
@@ -86,10 +86,9 @@ public class GPUCorrelationComputer implements Runnable {
                     sumXY = sumXY + voltageLocal[intervalIndex] * segmentAverageOnIndex;
                     squareSumX = squareSumX + voltageLocal[intervalIndex] * voltageLocal[intervalIndex];
                     squareSumY = squareSumY + segmentAverageOnIndex * segmentAverageOnIndex;
-                    localIndex++;
                 }
 
-                float corr = (segmentWidthLocal * sumXY - sumX * sumY) / sqrt(((segmentWidthLocal * squareSumX - sumX * sumX)*(segmentWidthLocal * squareSumY - sumY * sumY))+0.00001f);
+                float corr = (segmentWidthLocal * sumXY - sumX * sumY) / sqrt(((segmentWidthLocal * squareSumX - sumX * sumX)*(segmentWidthLocal * squareSumY - sumY * sumY)));
                 return corr;
             }
         };

@@ -19,6 +19,7 @@
         <module>testing-gui</module>
         <module>co-template</module>
         <module>trace-concat</module>
+        <module>db-classifier</module>
     </modules>
 
     <properties>
