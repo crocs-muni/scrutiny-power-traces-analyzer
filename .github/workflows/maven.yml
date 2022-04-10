@@ -34,7 +34,7 @@ jobs:
     - name: Publish release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: ${'ScrutinyTracesComparer/testing-gui/target/testing-gui.jar,ScrutinyTracesComparer/console-app/target/scrutiny-ptraces.jar'}
+        artifacts: ScrutinyTracesComparer/testing-gui/target/testing-gui.jar, ScrutinyTracesComparer/console-app/target/scrutiny-ptraces.jar
         tag: ${{ github.event.inputs.tag }}
         body: ${{ github.event.inputs.description }}
         token: ${{ secrets.GITHUB_TOKEN }}
