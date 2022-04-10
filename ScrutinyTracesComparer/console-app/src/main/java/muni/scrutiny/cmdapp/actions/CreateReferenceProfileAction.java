@@ -145,6 +145,7 @@ public class CreateReferenceProfileAction extends BaseAction {
 
             try (PrintWriter out = new PrintWriter(outputPath.resolve("reference.json").toFile())) {
                 TracesComparerDevice scrutinyModules = new TracesComparerDevice();
+                scrutinyModules.name = tracesComparerInput.cardCode;
                 TracesComparerModule scrutinyModule = new TracesComparerModule();
                 scrutinyModule.moduleData = tracesComparerOutput;
                 scrutinyModules.modules.put("TRACES_COMPARER", scrutinyModule);

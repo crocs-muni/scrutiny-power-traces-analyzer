@@ -277,8 +277,8 @@ public class MainForm {
                 }
 
                 PreprocessingResult pr = trp.preprocess(trace);
-                ChartTrace ctBefore = new ChartTrace(trace, TracePlotter.BLUE, new BasicStroke(1f));
-                ChartTrace ctAfter = new ChartTrace(pr.getPreprocessedTrace(), TracePlotter.ORANGE, new BasicStroke(2f));
+                ChartTrace ctBefore = new ChartTrace(trace, TracePlotter.BLUE, new Ellipse2D.Double(-7, -7, 14, 14));
+                ChartTrace ctAfter = new ChartTrace(pr.getPreprocessedTrace(), TracePlotter.ORANGE, new Ellipse2D.Double(-7, -7, 14, 14));
                 ctBefore.setDisplayName(trace.getDisplayName() + "-before");
                 ctBefore.setOrder(10);
                 ctAfter.setDisplayName(trace.getDisplayName() + "-after");

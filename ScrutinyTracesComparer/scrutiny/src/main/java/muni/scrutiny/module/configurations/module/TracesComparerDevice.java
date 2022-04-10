@@ -10,10 +10,10 @@ public class TracesComparerDevice {
     public String pyObject = "scrutiny.javacard.modules.tracescomparer.TraceComparerDevice";
 
     @SerializedName("device_type")
-    public String deviceType = "";
+    public String deviceType = "SMART_CARD";
 
     @SerializedName("name")
-    public String name = "TRACES_COMPARER";
+    public String name;
 
     @SerializedName("modules")
     public Map<String, TracesComparerModule> modules = new HashMap<>();

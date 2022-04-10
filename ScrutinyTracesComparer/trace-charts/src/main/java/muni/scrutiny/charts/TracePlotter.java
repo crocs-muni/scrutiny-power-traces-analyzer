@@ -5,6 +5,9 @@ import muni.scrutiny.traces.models.Trace;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.NumberTickUnit;
+import org.jfree.chart.axis.StandardTickUnitSource;
+import org.jfree.chart.axis.TickUnits;
 import org.jfree.chart.plot.DatasetRenderingOrder;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
@@ -74,7 +77,6 @@ public class TracePlotter {
         XYPlot xyPlot = chart.getXYPlot();
         xyPlot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
         int index = 0;
-
         for (ChartTrace trace : traces) {
             xyPlot.setDataset(index, new XYSeriesCollection(createXYSeries(trace)));
             XYLineAndShapeRenderer renderer = new DefaultXYItemRenderer();

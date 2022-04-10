@@ -74,7 +74,7 @@ public abstract class SlidingWindowTracePipeline extends TracePipeline<Compariso
                 double to = biggerTrace.getTimeOnIndex(intervalDistance.getTo());
                 IntervalMarker marker = new IntervalMarker(from, to);
                 marker.setPaint(TracePlotter.getColor(powerCoeff));
-                marker.setAlpha(0.1f);
+                marker.setAlpha(0.3f);
                 jfc.getXYPlot().addDomainMarker(marker, Layer.BACKGROUND);
             }
         }

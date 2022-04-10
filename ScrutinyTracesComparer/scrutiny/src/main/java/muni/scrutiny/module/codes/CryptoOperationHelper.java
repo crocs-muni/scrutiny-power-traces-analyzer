@@ -7,8 +7,8 @@ public class CryptoOperationHelper {
     private List<String> primaryNames = new ArrayList<String>()
     {{
         add("ALG_SECURE_RANDOM_128B");
-        add("LENGTH_AES_256");
-        add("LENGTH_DES3_3KEY");
+        add("SET_KEY_LENGTH_AES_256");
+        add("SET_KEY_LENGTH_DES3_3KEY");
         add("ALG_AES_BLOCK_128_CBC_NOPAD_LENGTH_AES_256");
         add("ALG_DES_CBC_NOPAD_LENGTH_DES3_3KEY");
         add("ALG_SHA");

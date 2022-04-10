@@ -14,8 +14,6 @@ import muni.scrutiny.cmdapp.actions.base.ActionFlag;
 import muni.scrutiny.cmdapp.actions.base.ActionParameter;
 import muni.scrutiny.cmdapp.actions.base.BaseAction;
 import muni.scrutiny.cmdapp.actions.utils.FileUtils;
-import muni.scrutiny.module.configurations.module.TracesComparerDevice;
-import muni.scrutiny.module.configurations.module.TracesComparerModule;
 import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.traces.helpers.UnitsHelper;
 import muni.scrutiny.traces.models.Trace;

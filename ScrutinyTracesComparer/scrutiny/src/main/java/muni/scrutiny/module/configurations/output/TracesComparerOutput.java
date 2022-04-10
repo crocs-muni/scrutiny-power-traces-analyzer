@@ -20,7 +20,7 @@ public class TracesComparerOutput {
     public List<TCOOperation> results;
 
     @SerializedName("created_date")
-    public LocalDateTime createdDate;
+    public String createdDate;
 
     @SerializedName("created_by")
     public String createdBy;

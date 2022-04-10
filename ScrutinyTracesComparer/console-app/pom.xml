@@ -85,7 +85,7 @@
         </dependency>
         <dependency>
             <groupId>muni.scrutiny</groupId>
-            <artifactId>co-template</artifactId>
+            <artifactId>co-template-finder</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
@@ -97,7 +97,7 @@
         </dependency>
         <dependency>
             <groupId>muni.scrutiny</groupId>
-            <artifactId>db-classifier</artifactId>
+            <artifactId>trace-classifier</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>

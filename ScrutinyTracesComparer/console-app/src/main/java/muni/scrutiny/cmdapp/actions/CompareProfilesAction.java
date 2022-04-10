@@ -143,6 +143,7 @@ public class CompareProfilesAction extends BaseAction {
 
             try (PrintWriter out = new PrintWriter(outputPath.resolve("comparison_result.json").toFile())) {
                 TracesComparerDevice scrutinyModules = new TracesComparerDevice();
+                scrutinyModules.name = ncc.cardCode;
                 TracesComparerModule scrutinyModule = new TracesComparerModule();
                 scrutinyModule.moduleData = tcrs;
                 scrutinyModules.modules.put("TRACES_COMPARER", scrutinyModule);

@@ -13,9 +13,11 @@ import muni.scrutiny.dbclassifier.computing.cpu.CPUOperationFinder;
 import muni.scrutiny.dbclassifier.computing.gpu.GPUOperationFinder;
 import muni.scrutiny.dbclassifier.computing.models.OperationFinderResult;
 import muni.scrutiny.dbclassifier.configurations.input.DBClassifierConfiguration;
+import muni.scrutiny.dbclassifier.configurations.module.SCRUTINYContrast;
+import muni.scrutiny.dbclassifier.configurations.module.TraceClassifierContrast;
 import muni.scrutiny.dbclassifier.configurations.output.CardDBCResult;
-import muni.scrutiny.dbclassifier.configurations.output.DBClassifierOutput;
 import muni.scrutiny.dbclassifier.configurations.output.OperationDBCResult;
+import muni.scrutiny.dbclassifier.configurations.output.SimilarityInterval;
 import muni.scrutiny.module.configurations.module.TracesComparerDevice;
 import muni.scrutiny.module.configurations.output.TCOOperation;
 import muni.scrutiny.module.configurations.output.TracesComparerOutput;
@@ -26,14 +28,12 @@ import muni.scrutiny.similaritysearch.pipelines.base.ComparisonPipeline;
 import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.traces.models.Trace;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.annotations.XYTextAnnotation;
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.chart.plot.XYPlot;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,7 +47,7 @@ public class TraceClassifierAction extends BaseAction {
     private static final String dbConfigShort = "-c";
     private static final String graphicCardShort = "-g";
     private static final String pShort = "-p";
-    private static final String takeNthShort = "-n";
+    private static final String jumpByShort = "-j";
     private static final String debugShort = "-d";
 
     private final Map<String, ActionParameter> parameters;
@@ -64,8 +64,8 @@ public class TraceClassifierAction extends BaseAction {
             put(pShort, new ActionParameter(new ArrayList<String>() {{
                 add(pShort);
             }}, false, "0.99"));
-            put(takeNthShort, new ActionParameter(new ArrayList<String>() {{
-                add(takeNthShort);
+            put(jumpByShort, new ActionParameter(new ArrayList<String>() {{
+                add(jumpByShort);
             }}, false, "10"));
         }};
         flags = new HashMap<String, ActionFlag>() {{
@@ -98,12 +98,12 @@ public class TraceClassifierAction extends BaseAction {
         try {
             super.executeAction(arguments);
             double p = getParameterAsDouble(pShort);
-            int takeNth = getParameterAsInt(takeNthShort);
+            int takeNth = getParameterAsInt(jumpByShort);
             Path configPath = getParameterAsPath(dbConfigShort);
             Path outputPath = configPath.getParent();
             DBClassifierConfiguration dbcc = getDBClassifierConfiguration(configPath);
-            DBClassifierOutput dbco = new DBClassifierOutput();
-            dbco.cardResults = new ArrayList<>();
+            TraceClassifierContrast tcc = new TraceClassifierContrast();
+            tcc.results = new ArrayList<>();
             Path traceToClassifyPath = getParameterAsPath(traceShort);
             Trace traceToClassify = DataManager.loadTrace(traceToClassifyPath, false);
             System.out.println("Trace to classify path: " + traceToClassifyPath.toAbsolutePath());
@@ -113,12 +113,16 @@ public class TraceClassifierAction extends BaseAction {
             System.out.println("n=" + takeNth);
 
             System.out.println("Trace classification process started.");
+            List<String> cardDBsAnalysed = new ArrayList<>();
+            boolean foundSomeMatches = false;
             for (Path referenceProfilePath : dbcc.getPaths()) {
                 TracesComparerOutput tco = getReferenceCardConfig(referenceProfilePath);
+                cardDBsAnalysed.add(tco.cardCode);
                 long cardStart = System.currentTimeMillis();
                 System.out.println("Using database of card " + tco.cardCode + " from path: " + referenceProfilePath.toAbsolutePath());
                 Path referencePathFolder = referenceProfilePath.getParent();
                 CardDBCResult cdbcr = new CardDBCResult();
+                tcc.results.add(cdbcr);
                 cdbcr.cardCode = tco.cardCode;
                 cdbcr.operationResults = new ArrayList<>();
                 for (TCOOperation operation : tco.results) {
@@ -157,26 +161,35 @@ public class TraceClassifierAction extends BaseAction {
                     }
 
                     OperationDBCResult odbcr = new OperationDBCResult();
-                    odbcr.startingTimes = similaritySet.getSimilarities().stream()
-                            .mapToDouble(s -> traceToClassify.getNormalizedTimeOnIndex(s.getFirstIndex()))
-                            .boxed()
-                            .collect(Collectors.toList());
-                    odbcr.distances = similaritySet.getSimilarities().stream()
-                            .mapToDouble(s -> s.getDistance())
-                            .boxed()
-                            .collect(Collectors.toList());
+                    odbcr.similarityIntervals = similaritySet.getSimilarities().stream()
+                            .map(s -> {
+                                SimilarityInterval si = new SimilarityInterval();
+                                si.indexesCompared = s.getLastIndex() - s.getFirstIndex();
+                                si.similarityValue = s.getDistance();
+                                si.similarityValueType = SimilaritySetType.DISTANCE.toString();
+                                si.timeFrom = traceToClassify.getNormalizedTimeOnIndex(s.getFirstIndex());
+                                si.timeTo = traceToClassify.getNormalizedTimeOnIndex(s.getLastIndex());
+                                return si;
+                            }).collect(Collectors.toList());
+                    foundSomeMatches |= !odbcr.similarityIntervals.isEmpty();
                     odbcr.visualizedOperations = visualizeResultIfAny(outputPath, traceToClassify, tco, operation, averageExecutionTime, odbcr);
                     odbcr.operationCode = operation.operationCode;
                     cdbcr.operationResults.add(odbcr);
-                    System.out.println(odbcr.startingTimes.size() + " operations " +  operation.operationCode + " found.");
+                    System.out.println(odbcr.similarityIntervals.size() + " operations " +  operation.operationCode + " found.");
                 }
 
                 long cardEnd = System.currentTimeMillis();
                 System.out.println("Search for operation on card " + tco.cardCode + " ended in: " + (double)(cardEnd- cardStart)/1000 + "s");
             }
 
-            try (PrintWriter out = new PrintWriter(outputPath.resolve("traceclassifier_result.json").toFile())) {
-                out.println(new Gson().toJson(dbco));
+            try (PrintWriter out = new PrintWriter(outputPath.resolve("traceclassifier_contrast.json").toFile())) {
+                SCRUTINYContrast sc = new SCRUTINYContrast();
+                sc.contrasts = new ArrayList<>();
+                sc.contrasts.add(tcc);
+                sc.refName = "Cards analyzed: " + String.join(", ", cardDBsAnalysed);
+                sc.result = foundSomeMatches ? "ContrastState.MATCH" : "ContrastState.SUSPICIOUS";
+                tcc.result = sc.result;
+                out.println(new Gson().toJson(sc));
             }
         } catch (Exception exception) {
             throw new ActionException(exception);
@@ -200,19 +213,19 @@ public class TraceClassifierAction extends BaseAction {
     }
 
     private String visualizeResultIfAny(Path outputPath, Trace traceToClassify, TracesComparerOutput tco, TCOOperation operation, double averageExecutionTime, OperationDBCResult odbcr) throws IOException {
-        if (odbcr.startingTimes.size() > 0) {
+        if (odbcr.similarityIntervals.size() > 0) {
             TracePlotter tp = new TracePlotter(traceToClassify);
             JFreeChart jfc = tp.createXYLineChart(
                     String.format(visualizationFormat, tco.cardCode, operation.operationCode),
                     traceToClassify.getDisplayTimeUnit(),
                     traceToClassify.getDisplayVoltageUnit());
             XYPlot plot = jfc.getXYPlot();
-            for (int i = 0; i < odbcr.distances.size(); i++) {
+            for (int i = 0; i < odbcr.similarityIntervals.size(); i++) {
                 IntervalMarker im = new IntervalMarker(
-                        odbcr.startingTimes.get(i),
-                        odbcr.startingTimes.get(i) + averageExecutionTime,
+                        odbcr.similarityIntervals.get(i).timeFrom,
+                        odbcr.similarityIntervals.get(i).timeFrom + averageExecutionTime,
                         TracePlotter.ORANGE);
-                im.setAlpha(0.2f);
+                im.setAlpha(0.25f);
                 plot.addDomainMarker(im);
             }
 
