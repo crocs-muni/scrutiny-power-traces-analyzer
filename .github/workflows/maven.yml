@@ -30,11 +30,11 @@ jobs:
       run: mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file -Dfile=ScrutinyTracesComparer/libs/FastDTW-1.0.jar;
         mvn -B package --file ScrutinyTracesComparer/pom.xml;
         mv ScrutinyTracesComparer/testing-gui/target/testing-gui-jar-with-dependencies.jar ScrutinyTracesComparer/testing-gui/target/testing-gui.jar;
-        mv ScrutinyTracesComparer/console-app/target/console-app-jar-with-dependencies.jar ScrutinyTracesComparer/console-app/target/ptrace-scrutiny.jar
+        mv ScrutinyTracesComparer/console-app/target/console-app-jar-with-dependencies.jar ScrutinyTracesComparer/console-app/target/scrutiny-ptraces.jar
     - name: Publish release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: ${'ScrutinyTracesComparer/testing-gui/target/testing-gui.jar.jar,ScrutinyTracesComparer/console-app/target/ptrace-scrutiny.jar'}
+        artifacts: ${'ScrutinyTracesComparer/testing-gui/target/testing-gui.jar.jar,ScrutinyTracesComparer/console-app/target/scrutiny-ptraces.jar'}
         tag: ${{ github.event.inputs.tag }}
         body: ${{ github.event.inputs.description }}
         token: ${{ secrets.GITHUB_TOKEN }}
