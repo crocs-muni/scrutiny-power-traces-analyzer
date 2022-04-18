@@ -1,9 +1,11 @@
 package muni.scrutiny.cmdapp.actions;
 
 import com.google.gson.Gson;
+import muni.cotemplate.module.CorrelationComputer;
 import muni.cotemplate.module.configurations.output.COTemplateFinderResult;
 import muni.cotemplate.module.configurations.output.COTemplatePeaksResult;
 import muni.scrutiny.charts.TracePlotter;
+import muni.scrutiny.charts.models.ChartTrace;
 import muni.scrutiny.cmdapp.actions.base.ActionException;
 import muni.scrutiny.cmdapp.actions.base.ActionFlag;
 import muni.scrutiny.cmdapp.actions.base.ActionParameter;
@@ -20,6 +22,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.annotations.XYTextAnnotation;
 import org.jfree.chart.plot.IntervalMarker;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -31,6 +34,9 @@ public class PeaksFinderAction extends BaseAction {
     private static final String configPathShort = "-c";
     private static final String desiredNShort = "-n";
     private static final String pShort = "-p";
+    private static final String jumpShort = "-j";
+
+    private static final double initalNumber = -2;
 
     private final Map<String, ActionParameter> parameters;
     private final Map<String, ActionFlag> flags;
@@ -46,6 +52,9 @@ public class PeaksFinderAction extends BaseAction {
             put(pShort, new ActionParameter(new ArrayList<String>() {{
                 add(pShort);
             }}, false, "0.99"));
+            put(jumpShort, new ActionParameter(new ArrayList<String>() {{
+                add(jumpShort);
+            }}, false, "1"));
         }};
         flags = new HashMap<>();
     }
@@ -72,17 +81,19 @@ public class PeaksFinderAction extends BaseAction {
             Path configPath = getParameterAsPath(configPathShort);
             COTemplateFinderResult cotfr = getCOTemplateFinderResult(configPath);
             Path outputPath = configPath.getParent();
-            Trace correlationsTrace = DataManager.loadTrace(outputPath.resolve(cotfr.wholeOperationCorrelationPath), false);
-            Trace realTrace = DataManager.loadTrace(outputPath.resolve(cotfr.realTracePath), true);
-            double[] traceVoltage = correlationsTrace.getVoltage();
-            int width = cotfr.operationLength;
+            Trace templateTrace = DataManager.loadTrace(outputPath.resolve(cotfr.operationTemplatePath), false);
+            Trace realTrace = DataManager.loadTrace(outputPath.resolve(cotfr.realTracePath), false);
+            realTrace.getTime(true);
             int desiredN = getParameterAsInt(desiredNShort);
-            int topNOccurences = traceVoltage.length / width;
+            int takeNth = getParameterAsInt(jumpShort);
+            int topNOccurences = realTrace.getDataCount() / templateTrace.getDataCount();
             if (desiredN > topNOccurences) {
                 throw new ActionException("Cannot find " + desiredN + " operations because according to the width there can be only " + topNOccurences);
             }
 
-            SimilaritySet simSet = getSimilaritiesSortedSet(traceVoltage, width, topNOccurences);
+            COTemplatePeaksResult cotpr = new COTemplatePeaksResult();
+            Trace correlationsTrace = getCorrelationsTrace(realTrace, templateTrace, takeNth, outputPath, cotpr);
+            SimilaritySet simSet = getSimilaritiesSortedSet(correlationsTrace.getVoltage(), templateTrace.getDataCount(), topNOccurences);
             double[] topNValues = getTopNValues(desiredN, simSet);
             double ciLowerBound = getConfidenceIntervalLowerBound(desiredN, topNValues);
             SortedSet<Similarity> similaritiesInInterval = new TreeSet<>();
@@ -92,13 +103,12 @@ public class PeaksFinderAction extends BaseAction {
             int n = getConfidenceIntervalMembers(realTrace, simSet, ciLowerBound, similaritiesInInterval, startingTimes, annotations, markers);
 
             TracePlotter tp = new TracePlotter(realTrace);
-            JFreeChart jfc = tp.createXYLineChart(realTrace.getDisplayName(), realTrace.getDisplayTimeUnit(), realTrace.getDisplayVoltageUnit());
+            JFreeChart jfc = tp.createXYLineChart("Highlighted_whole_template_" + realTrace.getDisplayName(), realTrace.getDisplayTimeUnit(), realTrace.getDisplayVoltageUnit());
             for (int i = 0; i < annotations.size(); i++) {
                 jfc.getXYPlot().addAnnotation(annotations.get(i));
                 jfc.getXYPlot().addDomainMarker(markers.get(i));
             }
 
-            COTemplatePeaksResult cotpr = new COTemplatePeaksResult();
             cotpr.expectedN = desiredN;
             cotpr.realN = n;
             cotpr.isMatch = n == desiredN;
@@ -163,7 +173,7 @@ public class PeaksFinderAction extends BaseAction {
     private SimilaritySet getSimilaritiesSortedSet(double[] traceVoltage, int width, int topNOccurences) {
         SimilaritySet simSet = new SimilaritySet(topNOccurences, SimilaritySetType.CORRELATION);
         for (int i = 0; i < traceVoltage.length - width; i++) {
-            Similarity s = new Similarity(i, i+ width, traceVoltage[i]);
+            Similarity s = new Similarity(i, i + width, traceVoltage[i]);
             simSet.add(s);
         }
         return simSet;
@@ -184,5 +194,75 @@ public class PeaksFinderAction extends BaseAction {
     private COTemplateFinderResult getCOTemplateFinderResult(Path coTemplateFinderResultPath) throws ActionException {
         String coTemplateFinderResultContent = FileUtils.readFile(coTemplateFinderResultPath);
         return new Gson().fromJson(coTemplateFinderResultContent, COTemplateFinderResult.class);
+    }
+
+    private Trace getCorrelationsTrace(Trace realTrace, Trace templateTrace, int takeNth, Path outputPath, COTemplatePeaksResult cotpr) throws IOException {
+        int templateFloatingWindowIterations = realTrace.getDataCount() - templateTrace.getDataCount();
+        double[] templateCorrelations = new double[realTrace.getDataCount()];
+        Arrays.fill(templateCorrelations, -2);
+        double[] realTraceVoltage = realTrace.getVoltage();
+        double[] templateVoltage = templateTrace.getVoltage();
+
+        for (int windowIndex = 0; windowIndex < templateFloatingWindowIterations; windowIndex += takeNth) {
+            templateCorrelations[windowIndex] = CorrelationComputer.correlationCoefficientStable(
+                    realTraceVoltage,
+                    templateVoltage,
+                    windowIndex,
+                    windowIndex + templateVoltage.length,
+                    templateVoltage.length
+            );
+        }
+
+        postprocess(templateCorrelations);
+        Trace correlationsTrace = new Trace(
+                "Correlations_whole_COtemplate.csv",
+                realTrace.getDataCount(),
+                realTrace.getVoltageUnit(),
+                realTrace.getTimeUnit(),
+                templateCorrelations,
+                realTrace.getSamplingFrequency());
+        cotpr.coTempCorrelationPath = saveTrace(correlationsTrace, outputPath);
+        cotpr.coptempCorrelationImagePath = visualizeCOTemplate(correlationsTrace, outputPath);
+        return correlationsTrace;
+    }
+
+    private String visualizeCOTemplate(Trace maskTemplateTrace, Path outputPath) throws IOException {
+        ChartTrace ct = new ChartTrace(maskTemplateTrace, TracePlotter.RED);
+        TracePlotter tp = new TracePlotter(ct);
+        String chartName = "Template_" + maskTemplateTrace.getDisplayName();
+        JFreeChart jfc = tp.createXYLineChart(chartName, maskTemplateTrace.getDisplayTimeUnit(), maskTemplateTrace.getDisplayVoltageUnit());
+        String imageName = FileUtils.saveComparisonImage(outputPath, jfc);
+        System.out.println("Template image saved to: " + imageName);
+        return imageName;
+    }
+
+    private String saveTrace(Trace trace, Path outputPath) throws IOException {
+        String templateName = trace.getName();
+        System.out.println("Correlations CSV saved to: " + templateName);
+        DataManager.saveTrace(outputPath.resolve(templateName), trace);
+        return templateName;
+    }
+
+    private double[] postprocess(double[] corrlations) {
+        double previousValidNumber = getFirstNoninitialNumber(corrlations, initalNumber);
+        for (int i = 0; i < corrlations.length; i++) {
+            if (corrlations[i] < -1) {
+                corrlations[i] = previousValidNumber;
+            }
+
+            previousValidNumber = corrlations[i];
+        }
+
+        return corrlations;
+    }
+
+    private double getFirstNoninitialNumber(double[] correlations, double initialNumber) {
+        for (int i = 0; i < correlations.length; i++) {
+            if (correlations[i] > initialNumber) {
+                return correlations[i];
+            }
+        }
+
+        return 0;
     }
 }

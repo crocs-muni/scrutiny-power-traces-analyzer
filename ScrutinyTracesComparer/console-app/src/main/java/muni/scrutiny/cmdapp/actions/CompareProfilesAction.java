@@ -108,14 +108,14 @@ public class CompareProfilesAction extends BaseAction {
                     tcooet.unit = ot.getTimeUnit();
                     return tcooet;
                 }).collect(Collectors.toList());
-                tcr.comparisonResults = new ArrayList<>();
+                tcr.pipelineComparisonResults = new ArrayList<>();
                 tcrs.results.add(tcr);
 
-                for (TCOOperationPipelineComparisons rm : rco.comparisonResults) {
+                for (TCOOperationPipelineComparisons rm : rco.pipelineComparisonResults) {
                     TCOOperationPipelineComparisons tcoopc = new TCOOperationPipelineComparisons();
                     tcoopc.pipeline = rm.pipeline;
                     tcoopc.comparisons = new ArrayList<>();
-                    tcr.comparisonResults.add(tcoopc);
+                    tcr.pipelineComparisonResults.add(tcoopc);
                     for (Trace ti : referenceOperationTraces) {
                         for (Trace tj : newOperationTraces) {
                             ComparisonPipeline cp = PipelineFactory.getInstance(

@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GPUOperationFinder implements OperationFinder {
+    private static final float initialNumber = -1f;
+
     @Override
     public OperationFinderResult findOperations(Trace unknownTrace, Trace operationTrace, int takeNth) {
         if (unknownTrace.getDataCount() < operationTrace.getDataCount()) {
@@ -39,16 +41,32 @@ public class GPUOperationFinder implements OperationFinder {
 
     private float[] initDistances(int size) {
         float[] distances = new float[size];
-        Arrays.fill(distances, -1);
+        Arrays.fill(distances, initialNumber);
         return distances;
     }
 
     private double[] toDouble(float[] floatDistances) {
+        float previousValidNumber = getFirstNoninitialNumber(floatDistances, initialNumber);
         double[] distances = new double[floatDistances.length];
         for (int i = 0; i < floatDistances.length; i++) {
+            if (distances[i] < 0) {
+                distances[i] = previousValidNumber;
+            }
+
+            previousValidNumber = floatDistances[i];
             distances[i] = floatDistances[i];
         }
 
         return distances;
+    }
+
+    private float getFirstNoninitialNumber(float[] floatDistances, float initialNumber) {
+        for (int i = 0; i < floatDistances.length; i++) {
+            if (floatDistances[i] > initialNumber) {
+                return floatDistances[i];
+            }
+        }
+
+        return 0f;
     }
 }

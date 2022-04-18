@@ -15,8 +15,8 @@ public class TCOOperation {
     @SerializedName("custom_parameters")
     public CustomPipelineParameters customParameters;
 
-    @SerializedName("comparisons")
-    public List<TCOOperationPipelineComparisons> comparisonResults;
+    @SerializedName("pipeline_comparisons")
+    public List<TCOOperationPipelineComparisons> pipelineComparisonResults;
 
     @SerializedName("operation_traces_paths")
     public List<String> operationTracesPaths;
@@ -28,7 +28,7 @@ public class TCOOperation {
     public boolean operationPresent;
 
     public double getConfidenceIntervalLowerBound(String pipeline, double p) {
-        TCOOperationPipelineComparisons tcoopc = comparisonResults
+        TCOOperationPipelineComparisons tcoopc = pipelineComparisonResults
                 .stream()
                 .filter(cr -> cr.metricType.equalsIgnoreCase(pipeline))
                 .findFirst()
@@ -37,7 +37,7 @@ public class TCOOperation {
     }
 
     public double getConfidenceIntervalUpperBound(String pipeline, double p) {
-        TCOOperationPipelineComparisons tcoopc = comparisonResults
+        TCOOperationPipelineComparisons tcoopc = pipelineComparisonResults
                 .stream()
                 .filter(cr -> cr.pipeline.equalsIgnoreCase(pipeline))
                 .findFirst()

@@ -14,6 +14,8 @@ public class CorrelationComputer implements Runnable {
     private final int segmentWidth;
     private final int windowIndexFrom;
     private final int windowIndexTo;
+    private final int takeNth;
+    private final double initialNumber;
 
     public CorrelationComputer(
             double[] voltage,
@@ -22,7 +24,9 @@ public class CorrelationComputer implements Runnable {
             int characterCount,
             int segmentWidth,
             int windowIndexFrom,
-            int windowIndexTo) {
+            int windowIndexTo,
+            int takeNth,
+            double initialNumber) {
         this.voltage = voltage;
         this.correlations = correlations;
         this.characterIntervals = characterIntervals;
@@ -30,11 +34,13 @@ public class CorrelationComputer implements Runnable {
         this.segmentWidth = segmentWidth;
         this.windowIndexFrom = windowIndexFrom;
         this.windowIndexTo = windowIndexTo;
+        this.takeNth = takeNth;
+        this.initialNumber = initialNumber;
     }
 
     @Override
     public void run() {
-        for (int windowIndex = windowIndexFrom; windowIndex < windowIndexTo; windowIndex++) {
+        for (int windowIndex = windowIndexFrom; windowIndex < windowIndexTo; windowIndex += takeNth) {
             computeCorrelationForCharacterAndWindowIndex(
                     voltage,
                     correlations,
@@ -43,6 +49,8 @@ public class CorrelationComputer implements Runnable {
                     segmentWidth,
                     windowIndex);
         }
+
+        postprocess(correlations.get(characterIntervals.getKey()));
     }
 
     private void computeCorrelationForCharacterAndWindowIndex(
@@ -76,6 +84,7 @@ public class CorrelationComputer implements Runnable {
             double segmentCorrelation = correlationCoefficientStable(voltage, averageSegment, windowIndex + interval.getKey(), windowIndex + interval.getValue(), segmentWidth);
             averageCorrelation += segmentCorrelation;
         }
+
         return averageCorrelation / characterCount;
     }
 
@@ -109,5 +118,28 @@ public class CorrelationComputer implements Runnable {
 
         double corr = (n * sumXY - sumX * sumY) / Math.sqrt(((n * squareSumX - sumX * sumX)*(n * squareSumY - sumY * sumY))+0.00001);
         return corr;
+    }
+
+    private double[] postprocess(double[] distances) {
+        double previousValidNumber = getFirstNoninitialNumber(distances, initialNumber);
+        for (int i = 0; i < distances.length; i++) {
+            if (distances[i] < -1) {
+                distances[i] = previousValidNumber;
+            }
+
+            previousValidNumber = distances[i];
+        }
+
+        return distances;
+    }
+
+    private double getFirstNoninitialNumber(double[] distances, double initialNumber) {
+        for (int i = 0; i < distances.length; i++) {
+            if (distances[i] > initialNumber) {
+                return distances[i];
+            }
+        }
+
+        return 0;
     }
 }

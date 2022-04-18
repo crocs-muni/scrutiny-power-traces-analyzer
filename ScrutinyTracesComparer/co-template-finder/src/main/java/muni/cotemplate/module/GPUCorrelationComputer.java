@@ -9,6 +9,7 @@ import com.aparapi.internal.kernel.KernelPreferences;
 import com.aparapi.internal.opencl.OpenCLPlatform;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,9 @@ public class GPUCorrelationComputer implements Runnable {
     private final int segmentWidth;
     private final int endingIndex;
     private final int devicesCount;
+    private final int takeNth;
+
+    private static final float initalNumber = -2f;
 
     Character currentCharacter;
 
@@ -29,35 +33,37 @@ public class GPUCorrelationComputer implements Runnable {
 
     public GPUCorrelationComputer(
             double[] voltage,
-            double voltageMaximum,
             HashMap<Character, double[]> correlations,
             Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals,
-            int characterCount,
             int segmentWidth,
             int endingIndex,
-            int devicesCount) {
+            int devicesCount,
+            int takeNth) {
         this.voltage = getFloatArray(voltage);
         this.correlations = correlations;
         this.segmentWidth = segmentWidth;
-        this.endingIndex = endingIndex;
+        this.endingIndex = (int)(endingIndex / takeNth);
         this.froms = getIntArray(characterIntervals, p -> p.getKey());
         this.tos = getIntArray(characterIntervals, p -> p.getValue());
         this.currentCharacter = characterIntervals.getKey();
         this.devicesCount = devicesCount;
+        this.takeNth = takeNth;
     }
 
     public void run() {
         int correlationsLength = correlations.get(currentCharacter).length;
         final float[] correlationsForCharacter = new float[correlationsLength];
+        Arrays.fill(correlationsForCharacter, initalNumber);
         final int intervalsLengthLocal = froms.length;
         final float[] voltageLocal = voltage;
         final int[] fromsLocal = froms;
         final int[] tosLocal = tos;
         final int segmentWidthLocal = segmentWidth;
+        final int takeNthLocal = takeNth;
         Kernel kernel = new Kernel() {
             @Override
             public void run() {
-                int windowIndex = getGlobalId(0);
+                int windowIndex = getGlobalId(0) * takeNthLocal;
                 float correlationSums = 0f;
                 for (int intervalIndex = 0; intervalIndex < intervalsLengthLocal; intervalIndex++) {
                     float segmentCorrelation = correlationCoefficientStable(fromsLocal[intervalIndex], tosLocal[intervalIndex], windowIndex);
@@ -103,8 +109,14 @@ public class GPUCorrelationComputer implements Runnable {
 
         kernel.execute(range);
         double[] doubleCorrelations = correlations.get(currentCharacter);
+        float firstNonintialNumber = findFirstNoninitialNumber(correlationsForCharacter, initalNumber);
         for (int i = 0; i < correlationsForCharacter.length; i++) {
+            if (correlationsForCharacter[i] < -1) {
+                doubleCorrelations[i] = firstNonintialNumber;
+            }
+
             doubleCorrelations[i] = correlationsForCharacter[i];
+            firstNonintialNumber = correlationsForCharacter[i];
         }
 
         kernel.dispose();
@@ -163,6 +175,16 @@ public class GPUCorrelationComputer implements Runnable {
         }
 
         return ints;
+    }
+
+    private float findFirstNoninitialNumber(float[] correlationsForCharacter, float initNumber) {
+        for (int i = 0; i < correlationsForCharacter.length; i++) {
+            if (correlationsForCharacter[i] > initNumber) {
+                return correlationsForCharacter[i];
+            }
+        }
+
+        return 0f;
     }
 
     protected interface PairSelector {

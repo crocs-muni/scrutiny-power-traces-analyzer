@@ -10,6 +10,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class CPUOperationFinder implements OperationFinder {
+    private static final double initalNumber = -1;
+
     @Override
     public OperationFinderResult findOperations(Trace unknownTrace, Trace operationTrace, int takeNth) {
         if (unknownTrace.getDataCount() < operationTrace.getDataCount()) {
@@ -50,18 +52,29 @@ public class CPUOperationFinder implements OperationFinder {
 
     private double[] initDistances(int size) {
         double[] matchIndexes = new double[size];
-        Arrays.fill(matchIndexes, -1);
+        Arrays.fill(matchIndexes, initalNumber);
         return matchIndexes;
     }
 
     private double[] postprocess(double[] distances) {
-        double previousValidNumber = Arrays.stream(distances).max().orElse(Double.MAX_VALUE);
+        double previousValidNumber = getFirstNoninitialNumber(distances, initalNumber);
         for (int i = 0; i < distances.length; i++) {
             if (distances[i] < 0) {
                 distances[i] = previousValidNumber;
             }
+
+            previousValidNumber = distances[i];
         }
 
         return distances;
     }
-}
+
+    private double getFirstNoninitialNumber(double[] distances, double initialNumber) {
+        for (int i = 0; i < distances.length; i++) {
+            if (distances[i] > initialNumber) {
+                return distances[i];
+            }
+        }
+
+        return 0;
+    }}

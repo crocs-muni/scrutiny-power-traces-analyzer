@@ -31,4 +31,10 @@ public class COTemplatePeaksResult {
 
     @SerializedName("n_visualizations_image_path")
     public String nVisualizationImagePath;
+
+    @SerializedName("cotemp_correlation_path")
+    public String coTempCorrelationPath;
+
+    @SerializedName("cotemp_correlation_image_path")
+    public String coptempCorrelationImagePath;
 }

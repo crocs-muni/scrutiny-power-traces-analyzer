@@ -52,7 +52,7 @@ public class TracePlotter {
     public TracePlotter(Trace trace) {
         this.traces = new ArrayList<>();
         this.additionalSeries = new ArrayList<>();
-        traces.add(new ChartTrace(trace, RED));
+        traces.add(new ChartTrace(trace, BLUE));
     }
 
     public TracePlotter(ChartTrace chartTrace) {

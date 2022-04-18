@@ -18,6 +18,7 @@ import muni.scrutiny.traces.DataManager;
 import muni.scrutiny.traces.helpers.UnitsHelper;
 import muni.scrutiny.traces.models.Trace;
 import org.apache.commons.lang3.tuple.Pair;
+import org.checkerframework.checker.units.qual.C;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.ui.Layer;
@@ -25,10 +26,7 @@ import org.jfree.ui.Layer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +37,9 @@ public class COTemplateFinderAction extends BaseAction {
     private static final String configShort = "-c";
     private static final String graphicComputation = "-g";
     private static final String devicesCountShort = "-d";
+    private static final String jumpShort = "-j";
+
+    private static final double initialNumber = -2;
 
     private final Map<String, ActionParameter> parameters;
     private final Map<String, ActionFlag> flags;
@@ -54,6 +55,9 @@ public class COTemplateFinderAction extends BaseAction {
             put(devicesCountShort, new ActionParameter(new ArrayList<String>() {{
                 add(devicesCountShort);
             }}, false, "0"));
+            put(jumpShort, new ActionParameter(new ArrayList<String>() {{
+                add(jumpShort);
+            }}, false, "1"));
         }};
         flags = new HashMap<String, ActionFlag>() {{
             put(graphicComputation, new ActionFlag(new ArrayList<String>() {{
@@ -91,6 +95,7 @@ public class COTemplateFinderAction extends BaseAction {
             System.out.println(configurationPath.toAbsolutePath());
             Path outputPath = configurationPath.getParent();
             COTemplateConfiguration coTemplateConfiguration = getCOTemplateConfig(configurationPath);
+            int takeNth = getParameterAsInt(jumpShort);
             if (!areTimeLengthsEqual(coTemplateConfiguration)) {
                 throw new ActionException("Times sizes are not equal.");
             }
@@ -129,7 +134,7 @@ public class COTemplateFinderAction extends BaseAction {
                 for (Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals : maskIntervals.entrySet()) {
                     int characterCount = characterCounts.get(characterIntervals.getKey());
                     int segmentWidth = characterWidths.get(characterIntervals.getKey());
-                    findMostCorrelatedSegment(voltage, trace.getMaximalVoltage(), endingIndex, correlations, characterIntervals, characterCount, segmentWidth, devicesCount);
+                    findMostCorrelatedSegment(voltage, endingIndex, correlations, characterIntervals, characterCount, segmentWidth, devicesCount, takeNth);
                 }
 
                 long end = System.currentTimeMillis();
@@ -159,28 +164,6 @@ public class COTemplateFinderAction extends BaseAction {
                     trace.getSamplingFrequency());
             visualizeCOTemplate(maskTemplateTrace, outputPath, cotfr);
             cotfr.operationTemplatePath = saveTemplateTrace(trace, outputPath, maskTemplateTrace);
-
-            int templateFloatingWindowIterations = voltage.length - maskTemplate.length;
-            double[] templateCorrelations = new double[voltage.length];
-            for (int windowIndex = 0; windowIndex < templateFloatingWindowIterations; windowIndex++) {
-                templateCorrelations[windowIndex] = CorrelationComputer.correlationCoefficientStable(
-                    voltage,
-                    maskTemplate,
-                    windowIndex,
-                    windowIndex + maskTemplate.length,
-                    maskTemplate.length
-                );
-            }
-
-            Trace correlationTrace = new Trace(
-                    "Correlations_whole_COtemplate.csv",
-                    trace.getDataCount(),
-                    trace.getVoltageUnit(),
-                    trace.getTimeUnit(),
-                    templateCorrelations,
-                    trace.getSamplingFrequency());
-            cotfr.wholeOperationCorrelationPath = saveTrace(correlationTrace, outputPath);
-            visualizeCOTemplate(correlationTrace, outputPath, cotfr);
             cotfr.operationLength = maskTemplate.length;
             cotfr.operationLengthTime = UnitsHelper.convertToSeconds(maskTemplateTrace.getExecutionTime(), maskTemplateTrace.getTimeUnit());
             try (PrintWriter out = new PrintWriter(outputPath.resolve("cotemplatefinder_result.json").toFile())) {
@@ -283,23 +266,22 @@ public class COTemplateFinderAction extends BaseAction {
 
     private void findMostCorrelatedSegment(
             double[] voltage,
-            double voltageMaximum,
             int endingIndex,
             HashMap<Character, double[]> correlations,
             Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals,
             int characterCount,
             int segmentWidth,
-            int devicesCount) throws InterruptedException {
+            int devicesCount,
+            int takeNth) throws InterruptedException {
         if (flags.get(graphicComputation).getValueOrDefault()) {
             GPUCorrelationComputer gpucc = new GPUCorrelationComputer(
                     voltage,
-                    voltageMaximum,
                     correlations,
                     characterIntervals,
-                    characterCount,
                     segmentWidth,
                     endingIndex,
-                    devicesCount);
+                    devicesCount,
+                    takeNth);
             gpucc.run();
         } else if (endingIndex > 1000) {
             int cores = Runtime.getRuntime().availableProcessors();
@@ -313,7 +295,9 @@ public class COTemplateFinderAction extends BaseAction {
                         characterCount,
                         segmentWidth,
                         index,
-                        Math.min((int)(index + jump), endingIndex)));
+                        Math.min((int)(index + jump), endingIndex),
+                        takeNth,
+                        initialNumber));
             }
 
             executor.shutdown();
@@ -324,11 +308,11 @@ public class COTemplateFinderAction extends BaseAction {
                     correlations,
                     characterIntervals,
                     characterCount,
-
-
                     segmentWidth,
                     0,
-                    endingIndex);
+                    endingIndex,
+                    takeNth,
+                    initialNumber);
             correlationComputer.run();
         }
     }
@@ -343,7 +327,7 @@ public class COTemplateFinderAction extends BaseAction {
         COTemplateFinderWidthResult cotfwr = new COTemplateFinderWidthResult();
         ChartTrace ct = new ChartTrace(trace, TracePlotter.BLUE);
         TracePlotter tp = new TracePlotter(ct);
-        String chartName = "Highlighted_" + trace.getDisplayName() + "-" + timeIteration;
+        String chartName = "Highlighted_" + trace.getDisplayName() + "_" + timeIteration;
         JFreeChart jfc = tp.createXYLineChart(chartName, trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
         IntervalMarker marker = new IntervalMarker(
                 trace.getTimeOnIndex(wcr.maxCorrelationIndex),
@@ -355,7 +339,7 @@ public class COTemplateFinderAction extends BaseAction {
         System.out.println("Highlighted area image saved to: " + cotfwr.highlightedTraceImagePath);
 
         tp = new TracePlotter(wcr.getCorrelationsChartTrace(trace));
-        chartName = "Correlations-" + trace.getDisplayName() + "-" + timeIteration;
+        chartName = "Correlations_" + trace.getDisplayName() + "_" + timeIteration;
         jfc = tp.createXYLineChart(chartName, trace.getDisplayTimeUnit(), trace.getDisplayVoltageUnit());
         cotfwr.suboperationsCorrelationImagePath = FileUtils.saveComparisonImage(outputPath, jfc);
         System.out.println("Correlations image saved to: " + cotfwr.suboperationsCorrelationImagePath);
@@ -365,7 +349,9 @@ public class COTemplateFinderAction extends BaseAction {
     private HashMap<Character, double[]> initializeCorrelations(HashMap<Character, List<Pair<Integer, Integer>>> maskIntervals, int endingIndex) {
         HashMap<Character, double[]> correlations = new HashMap<>();
         for (Map.Entry<Character, List<Pair<Integer, Integer>>> characterIntervals : maskIntervals.entrySet()) {
-            correlations.put(characterIntervals.getKey(), new double[endingIndex]);
+            double[] voltage = new double[endingIndex];
+            Arrays.fill(voltage, initialNumber);
+            correlations.put(characterIntervals.getKey(), voltage);
         }
         return correlations;
     }
@@ -457,7 +443,7 @@ public class COTemplateFinderAction extends BaseAction {
                     traceCorrelationsBasedOn.getTimeUnit(),
                     correlationsArray,
                     traceCorrelationsBasedOn.getSamplingFrequency());
-            return new ChartTrace(correlationTrace, TracePlotter.BLUE);
+            return new ChartTrace(correlationTrace, TracePlotter.RED);
         }
     }
 }

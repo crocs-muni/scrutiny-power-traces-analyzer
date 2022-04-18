@@ -10,6 +10,9 @@ public class TracesComparerModule {
     @SerializedName("module_name")
     public String moduleName = "TRACES_COMPARER";
 
+    @SerializedName("name")
+    public String name = "TRACES_COMPARER";
+
     @SerializedName("module_data")
     public TracesComparerOutput moduleData;
 }

@@ -101,13 +101,13 @@ public class CreateReferenceProfileAction extends BaseAction {
                     tcoOperationExecTime.time = ot.getExecutionTime();
                     return tcoOperationExecTime;
                 }).collect(Collectors.toList());
-                rco.comparisonResults = new ArrayList<>();
+                rco.pipelineComparisonResults = new ArrayList<>();
 
                 for (String pipelineName : tracesComparerInput.pipelines) {
                     TCOOperationPipelineComparisons rm = new TCOOperationPipelineComparisons();
                     rm.pipeline = pipelineName;
                     rm.comparisons = new ArrayList<>();
-                    rco.comparisonResults.add(rm);
+                    rco.pipelineComparisonResults.add(rm);
                     rco.operationPresent = true;
                     for (int i = 0; i < operationTraces.size(); i++) {
                         for (int j = i; j < operationTraces.size(); j++) {
@@ -148,6 +148,7 @@ public class CreateReferenceProfileAction extends BaseAction {
                 scrutinyModules.name = tracesComparerInput.cardCode;
                 TracesComparerModule scrutinyModule = new TracesComparerModule();
                 scrutinyModule.moduleData = tracesComparerOutput;
+                scrutinyModule.name = tracesComparerInput.cardCode;
                 scrutinyModules.modules.put("TRACES_COMPARER", scrutinyModule);
                 out.println(new Gson().toJson(scrutinyModules));
             }
