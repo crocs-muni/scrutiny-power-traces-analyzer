@@ -67,8 +67,16 @@ java -jar scrutiny-ptraces.jar classify -t .\TraceClassifier\TraceClassifier_Fei
 
 #### CO template finder
 
-
-
+1. CO template finder searches operations based on the pattern, the pattern is in the _test-config.json_.
+2. If you don't have _scrutiny-ptraces.jar_ in the _TestData_ copy it there.
+3. Execute action to finder the template of the operation.
+```
+java -jar scrutiny-ptraces.jar cotemp -t .\COTemplateFinder\COTemplateFinder_SmartCafe_6.0\SmartCafe\SmartCafe_B0.csv -c .\COTemplateFinder\COTemplateFinder_SmartCafe_6.0\SmartCafe\test-config.json -j 100
+```
+4. Execute action to find all occurrences operation template.
+```
+java -jar scrutiny-ptraces.jar peaks -c .\COTemplateFinder\COTemplateFinder_SmartCafe_6.0\SmartCafe\cotemplatefinder_result.json -n 6 -p 0.99 -j 100
+```
 
 
 ---
